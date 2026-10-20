@@ -1,0 +1,404 @@
+﻿/* Fuente: agrega esto en src/index.html dentro de <head>:
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+*/
+
+/* Variables de color */
+:host {
+  --primary: #0d5959;
+  --primary-dark: #0a4747;
+  --accent: #f39c12;
+  --text: #2c3e50;
+  --text-light: #7a7a7a;
+  --border: #e0e0e0;
+  --border-input: #7fb0b0;
+  --surface: #ffffff;
+  --background: #f8f9fa;
+  --success: #4caf50;
+  --danger: #d93025;
+  --placeholder: #b0b0b0;
+  display: block;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Layout principal */
+.auth-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background-color: var(--background);
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: 460px;
+  background-color: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 40px 32px 28px;
+}
+
+/* Encabezado */
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.heading-text h2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.heading-text .title {
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.heading-text .badge {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+}
+
+.heading-text .intro {
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.45;
+  margin-top: 10px;
+  max-width: 260px;
+}
+
+.heading-illustration {
+  width: 86px;
+  height: 86px;
+  min-width: 86px;
+  color: var(--text);
+  stroke: var(--text);
+  opacity: 0.85;
+}
+
+/* Formulario */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  margin-bottom: 4px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form-group-full {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Iconos SVG de línea */
+.field-icon,
+.show-password-btn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.field-icon {
+  position: absolute;
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-light);
+  pointer-events: none;
+}
+
+.form-control {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px 0 38px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background-color: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control::placeholder {
+  color: var(--placeholder);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13, 89, 89, 0.1);
+}
+
+.form-control.is-invalid {
+  border-color: var(--danger);
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--danger);
+}
+
+.show-password-btn {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-light);
+  transition: color 0.2s ease;
+}
+
+.show-password-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.show-password-btn:hover {
+  color: var(--primary);
+}
+
+/* Checkbox */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  margin: 4px 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.checkbox-group a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.checkbox-group a:hover {
+  text-decoration: underline;
+}
+
+/* Botones */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  width: 100%;
+  background-color: var(--primary);
+  color: var(--surface);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(13, 89, 89, 0.25);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Separador */
+.separator {
+  position: relative;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text);
+  margin: 12px 0 4px;
+}
+
+.separator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--border);
+}
+
+.separator span {
+  position: relative;
+  display: inline-block;
+  padding: 0 10px;
+  background-color: var(--surface);
+}
+
+/* Botones sociales */
+.social-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn-social {
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-input);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 0 12px;
+}
+
+.btn-social:hover {
+  background-color: #f4f9f9;
+  border-color: var(--primary);
+}
+
+.social-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Nota de seguridad */
+.footer-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.lock-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--text-light);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .auth-layout {
+    padding: 20px;
+  }
+
+  .auth-panel {
+    padding: 32px 24px 24px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .form-group-full {
+    grid-column: 1;
+  }
+
+  /* 16px evita el zoom automático en iOS */
+  .form-control {
+    font-size: 16px;
+  }
+
+  .social-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-panel {
+    padding: 24px 16px;
+  }
+
+  .heading-text .title {
+    font-size: 26px;
+  }
+
+  .heading-text .badge {
+    font-size: 24px;
+  }
+
+  .heading-illustration {
+    display: none;
+  }
+
+  .heading-text .intro {
+    max-width: none;
+  }
+}

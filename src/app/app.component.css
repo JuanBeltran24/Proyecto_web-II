@@ -1,0 +1,5 @@
+/* Estilos globales de la aplicación */
+:host {
+  display: block;
+  min-height: 100vh;
+}

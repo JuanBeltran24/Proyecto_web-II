@@ -1,0 +1,441 @@
+/* La fuente Poppins se carga desde src/index.html */
+
+/* Variables de color */
+:host {
+  --primary: #0d5959;
+  --primary-dark: #0a4747;
+  --accent: #f39c12;
+  --text: #2c3e50;
+  --text-light: #7a7a7a;
+  --icon: #6b6b6b;
+  --border: #e0e0e0;
+  --border-input: #7fb0b0;
+  --surface: #ffffff;
+  --background: #f8f9fa;
+  --success: #4caf50;
+  --danger: #d93025;
+  --placeholder: #b0b0b0;
+  display: block;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Layout principal */
+.auth-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background-color: var(--background);
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: 560px;
+  background-color: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 40px 32px 32px;
+}
+
+/* Encabezado */
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.heading-text h2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.heading-text .title {
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.badge-pro {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+}
+
+.heading-text .intro {
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.45;
+  margin-top: 10px;
+  max-width: 270px;
+}
+
+.heading-illustration {
+  width: 118px;
+  height: 108px;
+  min-width: 118px;
+  color: #1f4e5f;
+}
+
+/* Secciones */
+.form-section {
+  margin-bottom: 26px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: var(--primary);
+  color: var(--surface);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.section-header h3 {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+/* Formulario */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+.form-grid-3 {
+  grid-template-columns: 1fr 1.45fr 1fr;
+  gap: 14px 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form-group-full {
+  grid-column: 1 / -1;
+}
+
+.textarea-group {
+  margin-bottom: 14px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.field-label-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrap-top {
+  align-items: flex-start;
+}
+
+/* Iconos SVG de línea */
+.field-icon,
+.label-icon,
+.show-password-btn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.field-icon {
+  position: absolute;
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  color: var(--icon);
+  pointer-events: none;
+}
+
+.field-icon-top {
+  top: 13px;
+}
+
+.form-control {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px 0 38px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background-color: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control::placeholder {
+  color: var(--placeholder);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13, 89, 89, 0.1);
+}
+
+.form-control.is-invalid {
+  border-color: var(--danger);
+}
+
+.form-textarea {
+  height: auto;
+  min-height: 104px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.char-counter {
+  font-size: 11px;
+  color: var(--text-light);
+  text-align: right;
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--danger);
+}
+
+/* Contraseña */
+.show-password-btn {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--icon);
+  transition: color 0.2s ease;
+}
+
+.show-password-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.show-password-btn:hover {
+  color: var(--primary);
+}
+
+.form-grid .form-group:has(.show-password-btn) .form-control {
+  padding-right: 40px;
+}
+
+/* Modalidad de trabajo */
+.radio-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  background-color: var(--surface);
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.radio-option input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Checkbox */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  margin: 2px 0 18px;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.checkbox-group a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.checkbox-group a:hover {
+  text-decoration: underline;
+}
+
+/* Botones */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  width: 100%;
+  background-color: var(--primary);
+  color: var(--surface);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(13, 89, 89, 0.25);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .auth-layout {
+    padding: 20px;
+  }
+
+  .auth-panel {
+    padding: 32px 24px 24px;
+  }
+
+  .form-grid,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* 16px evita el zoom automático en iOS */
+  .form-control {
+    font-size: 16px;
+    height: 46px;
+  }
+
+  .form-textarea {
+    height: auto;
+  }
+
+  .radio-box {
+    height: 46px;
+    justify-content: flex-start;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-panel {
+    padding: 24px 16px;
+  }
+
+  .heading-text .title {
+    font-size: 26px;
+  }
+
+  .badge-pro {
+    font-size: 24px;
+  }
+
+  .heading-illustration {
+    display: none;
+  }
+
+  .heading-text .intro {
+    max-width: none;
+  }
+}

@@ -1,0 +1,129 @@
+<section
+  class="hero-section"
+  aria-roledescription="carrusel"
+  aria-label="Profesionales verificados"
+>
+
+  <!-- Imágenes del carrusel -->
+  <div class="hero-slides" aria-hidden="true">
+    @for (src of slides; track $index) {
+      <img class="hero-slide" [class.is-active]="$index === current()" [src]="src" alt="" />
+    }
+  </div>
+
+  <div class="hero-overlay"></div>
+
+  <!-- Flechas -->
+  @if (slides.length > 1) {
+    <button type="button" class="hero-arrow hero-arrow--prev" aria-label="Imagen anterior" (click)="onPrev()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button type="button" class="hero-arrow hero-arrow--next" aria-label="Imagen siguiente" (click)="onNext()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  }
+
+  <!-- Contenido -->
+  <div class="hero-content">
+    <div class="container">
+      <div class="hero-text">
+        <h1>
+          Encuentra al profesional<br>
+          que necesitas,<br>
+          <span class="highlight">cuando lo necesitas</span>
+        </h1>
+        <p class="hero-description">
+          Conéctate con técnicos y profesionales verificados<br>
+          y agenda tu servicio de forma rápida y segura.
+        </p>
+
+        <!-- Search Box -->
+        <form class="search-box" role="search" (ngSubmit)="onSearch()">
+          <div class="search-input-group">
+            <label class="input-with-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="9" cy="9" r="6" stroke="#666" stroke-width="2"/>
+                <path d="M14 14L18 18" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <input
+                type="text"
+                name="servicio"
+                aria-label="Servicio"
+                placeholder="¿Qué servicio necesitas? Plomería, Electricidad, Pintura..."
+                [(ngModel)]="searchService"
+                class="search-input"
+              />
+            </label>
+
+            <label class="input-with-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 2C7 2 4 4 4 7C4 10 7 13 10 17C13 13 16 10 16 7C16 4 13 2 10 2Z" stroke="#666" stroke-width="1.5" fill="none"/>
+                <circle cx="10" cy="7" r="2" fill="#666"/>
+              </svg>
+              <input
+                type="text"
+                name="ubicacion"
+                aria-label="Ubicación"
+                placeholder="¿Dónde? Ciudad o barrio"
+                [(ngModel)]="searchLocation"
+                class="search-input"
+              />
+            </label>
+
+            <button type="submit" class="btn-search" aria-label="Buscar">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="9" cy="9" r="6" stroke="white" stroke-width="2"/>
+                <path d="M14 14L18 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <!-- CTA Message -->
+        <p class="cta-message">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="11" fill="#2eb872"/>
+            <path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Para contactar y agendar, regístrate o inicia sesión.</span>
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="hero-actions">
+          <a routerLink="/registro" class="btn btn-primary btn-large">Regístrate gratis</a>
+          <a routerLink="/login" class="btn btn-secondary btn-large">Iniciar sesión</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Puntos del carrusel -->
+  @if (slides.length > 1) {
+    <div class="hero-dots">
+      @for (src of slides; track $index) {
+        <button
+          type="button"
+          class="hero-dot"
+          [class.is-active]="$index === current()"
+          [attr.aria-label]="'Ir a la imagen ' + ($index + 1)"
+          [attr.aria-current]="$index === current() ? 'true' : null"
+          (click)="onDot($index)"
+        ></button>
+      }
+    </div>
+  }
+
+  <!-- Badge (hijo directo del hero: abajo a la derecha) -->
+  <div class="trust-badge">
+    <div class="badge-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d5959" stroke-width="1.8" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="M8.5 12l2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="badge-text">
+      <strong>Profesionales verificados</strong>
+      <p>Calificados y evaluados<br>por otros usuarios.</p>
+    </div>
+  </div>
+</section>

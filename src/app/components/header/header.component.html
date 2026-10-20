@@ -1,0 +1,50 @@
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <!-- Logo -->
+      <a href="/" class="logo">
+        <img src="/img/logo.png" alt="Aquí hay Camello" class="logo-image">
+        <div class="logo-text">
+          <span class="logo-title">Aquí hay</span>
+          <span class="logo-subtitle">Camello</span>
+        </div>
+      </a>
+
+      <!-- Navigation Desktop -->
+      <nav class="nav-desktop">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/servicios" class="nav-link">Buscar Servicios</a>
+        <a href="/como-funciona" class="nav-link">¿Cómo funciona?</a>
+        <a href="/ayuda" class="nav-link">Ayuda</a>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="header-actions">
+        <button class="btn-cuenta">¿No tienes cuenta?</button>
+        <a href="/login" class="btn btn-secondary">Iniciar Sesión</a>
+        <a href="/register" class="btn btn-primary">Regístrate</a>
+      </div>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-menu-toggle" (click)="toggleMobileMenu()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <nav class="nav-mobile" [class.active]="isMobileMenuOpen">
+      <a href="/" class="nav-link">Inicio</a>
+      <a href="/servicios" class="nav-link">Buscar Servicios</a>
+      <a href="/como-funciona" class="nav-link">¿Cómo funciona?</a>
+      <a href="/ayuda" class="nav-link">Ayuda</a>
+      <div class="mobile-actions">
+        <a href="/login" class="btn btn-secondary btn-full-width">Iniciar Sesión</a>
+        <a href="/register" class="btn btn-primary btn-full-width">Regístrate</a>
+      </div>
+    </nav>
+  </div>
+</header>

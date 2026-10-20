@@ -1,0 +1,183 @@
+.header {
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.header .container {
+  position: relative;
+}
+
+.header .header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+/* Logo */
+.header .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.header .logo .logo-image {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.header .logo .logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header .logo .logo-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.header .logo .logo-subtitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f39c12;
+}
+
+/* Navigation Desktop */
+.header .nav-desktop {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex: 1;
+}
+
+@media (max-width: 968px) {
+  .header .nav-desktop {
+    display: none;
+  }
+}
+
+.header .nav-desktop .nav-link {
+  color: #2c3e50;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.header .nav-desktop .nav-link:hover {
+  color: #0d5959;
+}
+
+.header .nav-desktop .nav-link.active {
+  color: #0d5959;
+  font-weight: 600;
+}
+
+/* Header Actions */
+.header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 968px) {
+  .header .header-actions {
+    display: none;
+  }
+}
+
+.header .header-actions .btn-cuenta {
+  background: none;
+  border: none;
+  color: #666666;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.header .header-actions .btn-cuenta:hover {
+  color: #0d5959;
+}
+
+.header .header-actions .btn {
+  padding: 10px 20px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* Mobile Menu Toggle */
+.header .mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #2c3e50;
+}
+
+@media (max-width: 968px) {
+  .header .mobile-menu-toggle {
+    display: block;
+  }
+}
+
+.header .mobile-menu-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Mobile Navigation */
+.header .nav-mobile {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 0;
+  margin-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 968px) {
+  .header .nav-mobile {
+    display: flex;
+  }
+}
+
+.header .nav-mobile.active {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.header .nav-mobile .nav-link {
+  color: #2c3e50;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 8px 0;
+}
+
+.header .nav-mobile .nav-link:hover {
+  color: #0d5959;
+}
+
+.header .nav-mobile .mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
