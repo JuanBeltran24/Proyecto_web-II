@@ -1,0 +1,35 @@
+<div class="shell-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-area">
+      <h2>Panel Profesional</h2>
+      @if (professional) {
+        <p class="professional-name">{{ professional.name }}</p>
+      }
+    </div>
+
+    <nav class="nav-menu">
+      <a routerLink="/profesional/solicitudes" routerLinkActive="active" class="nav-item">
+        <span class="icon">📋</span>
+        <span>Solicitudes</span>
+      </a>
+      <a routerLink="/profesional/dashboard" routerLinkActive="active" class="nav-item">
+        <span class="icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/profesional/perfil" routerLinkActive="active" class="nav-item">
+        <span class="icon">👤</span>
+        <span>Mi Perfil</span>
+      </a>
+    </nav>
+
+    <button (click)="logout()" class="logout-button">
+      Cerrar Sesión
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

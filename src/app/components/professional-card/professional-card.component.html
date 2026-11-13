@@ -1,4 +1,4 @@
-<div class="professional-card">
+<div class="professional-card" (click)="onCardClick()">
   <!-- Header con imagen y mapa -->
   <div class="card-header">
     <div class="profile-section">
@@ -89,7 +89,7 @@
     <p class="price-description">{{ professional.priceDescription }}</p>
 
     <!-- Botón de acción -->
-    <button class="btn btn-primary btn-full-width" (click)="onViewProfile()">
+    <button class="btn btn-primary btn-full-width" (click)="onViewProfile(); $event.stopPropagation()">
       Ver perfil completo
     </button>
   </div>

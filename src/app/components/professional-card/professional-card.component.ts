@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface Professional {
@@ -40,8 +40,13 @@ export class ProfessionalCardComponent {
     backgroundCheck: 'OK'
   };
 
+  @Output() cardClick = new EventEmitter<Professional>();
+
   onViewProfile(): void {
-    console.log('Ver perfil de:', this.professional.name);
-    // Aquí iría la navegación al perfil completo
+    this.cardClick.emit(this.professional);
+  }
+
+  onCardClick(): void {
+    this.cardClick.emit(this.professional);
   }
 }

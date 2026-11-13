@@ -9,5 +9,9 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'register-professional', component: RegisterProfessionalComponent },
+  { 
+    path: 'profesional', 
+    loadChildren: () => import('./professional-panel/professional.routes').then(m => m.PROFESSIONAL_ROUTES)
+  },
   { path: '**', redirectTo: '' }
 ];

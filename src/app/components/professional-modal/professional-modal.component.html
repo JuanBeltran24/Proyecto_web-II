@@ -1,0 +1,376 @@
+<!-- Overlay -->
+<div
+  class="modal-overlay"
+  *ngIf="isOpen && professional"
+  (click)="onOverlayClick($event)"
+  [@fadeIn]>
+
+  <!-- Contenedor -->
+  <div
+    class="modal-container"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="professional-modal-title"
+    [@slideIn]>
+
+    <!-- Botón cerrar -->
+    <button type="button" class="modal-close-btn" (click)="onClose()" aria-label="Cerrar modal">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+
+    <div class="modal-scroll">
+
+      <!-- ========== BANNER ========== -->
+      <div class="hero-banner" aria-hidden="true"></div>
+
+      <!-- ========== ENCABEZADO ========== -->
+      <header class="profile-header">
+        <div class="photo-wrapper">
+          <img [src]="professional.photo" [alt]="professional.name" class="professional-photo">
+          <span class="verification-badge" *ngIf="professional.isVerified" title="Identidad verificada">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+              <path d="M8 12l2.5 2.5L16 9" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+
+        <div class="profile-info">
+          <h2 class="professional-name" id="professional-modal-title">{{ professional.name }}</h2>
+          <p class="professional-specialty">{{ professional.specialty }}</p>
+
+          <div class="pills-row">
+            <span class="pill pill-success" *ngIf="professional.isVerified">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
+              ID verificada
+            </span>
+            <span class="pill pill-success" *ngIf="professional.backgroundCheck === 'OK'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <path d="M9 15l2 2 4-4"/>
+              </svg>
+              Antecedentes {{ professional.backgroundCheck }}
+            </span>
+          </div>
+
+          <div class="rating-section">
+            <div class="stars-inline" [attr.aria-label]="'Calificación ' + professional.rating + ' de 5'">
+              <svg *ngFor="let star of getStarsArray(professional.rating); let i = index"
+                   class="star" [class.star-empty]="!star"
+                   [style.animation-delay.ms]="i * 70"
+                   width="20" height="20" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </div>
+            <span class="rating-value">{{ professional.rating }}</span>
+            <span class="rating-count">({{ professional.reviewCount }} valoraciones)</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ========== FRANJA DE INDICADORES ========== -->
+      <div class="stats-strip">
+        <div class="stat">
+          <div class="stat-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="6"/>
+              <path d="M15.5 13.5L17 22l-5-3-5 3 1.5-8.5"/>
+            </svg>
+          </div>
+          <div>
+            <p class="stat-label">Experiencia</p>
+            <p class="stat-value">{{ experience }} años</p>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div>
+            <p class="stat-label">Tiempo estimado</p>
+            <p class="stat-value">≈ {{ professional.arrivalTime }}</p>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <div>
+            <p class="stat-label">Ubicación</p>
+            <p class="stat-value">{{ professional.location }}</p>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+          </div>
+          <div>
+            <p class="stat-label">Servicios</p>
+            <p class="stat-value">{{ services.length }} opciones</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== CUERPO: 2 COLUMNAS ========== -->
+      <div class="modal-body">
+
+        <!-- Columna principal -->
+        <main class="main-column">
+
+          <!-- Acerca del profesional -->
+          <section class="modal-section">
+            <h3 class="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Acerca del profesional
+            </h3>
+            <p class="section-text">{{ description }}</p>
+          </section>
+
+          <!-- Servicios -->
+          <section class="modal-section">
+            <h3 class="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+              </svg>
+              Servicios que ofrece
+            </h3>
+            <div class="services-tags">
+              <span class="service-tag" *ngFor="let service of services">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                {{ service }}
+              </span>
+            </div>
+          </section>
+
+          <!-- Información adicional -->
+          <section class="modal-section">
+            <h3 class="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              Información adicional
+            </h3>
+
+            <div class="additional-info-grid">
+              <div class="info-item">
+                <div class="info-item-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="info-item-label">Disponibilidad</p>
+                  <p class="info-item-value">{{ availability }}</p>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-item-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                    <line x1="1" y1="10" x2="23" y2="10"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="info-item-label">Métodos de pago</p>
+                  <p class="info-item-value">{{ paymentMethods }}</p>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-item-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="info-item-label">Idioma</p>
+                  <p class="info-item-value">{{ language }}</p>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-item-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="info-item-label">Cobertura</p>
+                  <p class="info-item-value">{{ coverage }}</p>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <div class="info-item-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="info-item-label">Garantía</p>
+                  <p class="info-item-value">{{ warranty }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Opiniones -->
+          <section class="modal-section">
+            <h3 class="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+              ¿Qué dicen sus clientes?
+            </h3>
+
+            <div class="reviews-summary">
+              <div class="reviews-score-box">
+                <p class="reviews-score">{{ professional.rating }}</p>
+                <div class="stars-inline">
+                  <svg *ngFor="let star of getStarsArray(professional.rating)"
+                       class="star" [class.star-empty]="!star"
+                       width="16" height="16" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                </div>
+                <p class="reviews-total">{{ reviews.length }} reseñas recientes</p>
+              </div>
+
+              <div class="rating-bars">
+                <div class="rating-bar-row" *ngFor="let row of getRatingDistribution()">
+                  <span class="bar-label">{{ row.stars }}</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#ffc107">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  <div class="bar-track">
+                    <div class="bar-fill" [style.width.%]="row.percent"></div>
+                  </div>
+                  <span class="bar-count">{{ row.count }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="reviews-list">
+              <article class="review-card" *ngFor="let review of (showAllReviews ? reviews : reviews.slice(0, 2))">
+                <div class="review-header">
+                  <div class="review-author">
+                    <div class="author-avatar" [style.background]="getAvatarColor(review.clientName)">
+                      {{ review.clientName.charAt(0) }}
+                    </div>
+                    <div>
+                      <p class="author-name">{{ review.clientName }}</p>
+                      <p class="review-date">{{ review.date | date:'dd/MM/yyyy' }}</p>
+                    </div>
+                  </div>
+                  <div class="stars-inline">
+                    <svg *ngFor="let star of getStarsArray(review.rating)"
+                         class="star-static" [class.star-empty]="!star"
+                         width="15" height="15" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <p class="review-comment">“{{ review.comment }}”</p>
+              </article>
+            </div>
+
+            <button type="button" class="btn-see-more" *ngIf="reviews.length > 2" (click)="toggleReviews()">
+              {{ showAllReviews ? 'Ver menos reseñas' : 'Ver más reseñas' }}
+              <svg class="chevron" [class.chevron-up]="showAllReviews" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+          </section>
+
+        </main>
+
+        <!-- Panel lateral (solo escritorio) -->
+        <aside class="side-column">
+          <div class="booking-card">
+            <p class="booking-label">Tarifa de visita</p>
+            <p class="booking-price">
+              <span class="booking-from">Desde</span> {{ professional.visitRate }}
+            </p>
+
+            <button type="button" class="btn btn-primary btn-block" (click)="onRequestService()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Solicitar servicio
+            </button>
+
+            <ul class="booking-perks">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Garantía de {{ warranty }}
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Llega en ≈ {{ professional.arrivalTime }}
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Pago: {{ paymentMethods }}
+              </li>
+            </ul>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+
+    <!-- Footer fijo (solo móvil / tablet) -->
+    <footer class="modal-footer">
+      <div class="footer-price">
+        <span class="footer-price-label">Desde</span>
+        <span class="footer-price-value">{{ professional.visitRate }}</span>
+      </div>
+      <button type="button" class="btn btn-primary btn-large" (click)="onRequestService()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Solicitar servicio
+      </button>
+    </footer>
+
+  </div>
+</div>

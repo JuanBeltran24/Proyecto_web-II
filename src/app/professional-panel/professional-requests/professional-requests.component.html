@@ -1,0 +1,166 @@
+<div class="requests-container">
+  <!-- Lista de conversaciones (Master) -->
+  <div class="conversations-list">
+    <h2>Solicitudes</h2>
+    
+    @if (conversations$ | async; as conversations) {
+      @if (conversations.length === 0) {
+        <div class="empty-state">
+          <p>No tienes solicitudes todavía</p>
+        </div>
+      } @else {
+        @for (conv of conversations; track conv.id) {
+          <div 
+            class="conversation-card"
+            [class.active]="selectedConversation?.id === conv.id"
+            [class.unread]="conv.unreadForPro > 0"
+            (click)="selectConversation(conv)"
+          >
+            <div class="conv-header">
+              <h3>{{ conv.clientName }}</h3>
+              @if (conv.unreadForPro > 0) {
+                <span class="unread-badge">{{ conv.unreadForPro }}</span>
+              }
+            </div>
+            
+            @if (conv.request) {
+              <p class="conv-service">{{ conv.request.service }}</p>
+              <p class="conv-datetime">{{ conv.request.day }} · {{ conv.request.time }}</p>
+              
+              <span 
+                class="status-badge"
+                [style.color]="getStatusConfig(conv.request.status).color"
+                [style.background-color]="getStatusConfig(conv.request.status).bgColor"
+              >
+                {{ getStatusConfig(conv.request.status).label }}
+              </span>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+
+  <!-- Detalle de conversación (Detail) -->
+  <div class="conversation-detail">
+    @if (!selectedConversation) {
+      <div class="empty-detail">
+        <p>Selecciona una solicitud para ver los detalles</p>
+      </div>
+    } @else {
+      <!-- Cabecera con información del cliente -->
+      <div class="detail-header">
+        <div>
+          <h2>{{ selectedConversation.clientName }}</h2>
+          <p class="specialty">{{ selectedConversation.professionalSpecialty }}</p>
+        </div>
+        
+        @if (selectedConversation.request) {
+          <span 
+            class="status-badge large"
+            [style.color]="getStatusConfig(selectedConversation.request.status).color"
+            [style.background-color]="getStatusConfig(selectedConversation.request.status).bgColor"
+          >
+            {{ getStatusConfig(selectedConversation.request.status).label }}
+          </span>
+        }
+      </div>
+
+      <!-- Detalles de la solicitud -->
+      @if (selectedConversation.request) {
+        <div class="request-details">
+          <h3>Detalles de la solicitud</h3>
+          
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="label">Servicio:</span>
+              <span class="value">{{ selectedConversation.request.service }}</span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="label">Descripción:</span>
+              <span class="value">{{ selectedConversation.request.description }}</span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="label">Fecha:</span>
+              <span class="value">{{ selectedConversation.request.day }}</span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="label">Hora:</span>
+              <span class="value">{{ selectedConversation.request.time }}</span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="label">Dirección:</span>
+              <span class="value">{{ selectedConversation.request.address }}</span>
+            </div>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="action-buttons">
+            @if (selectedConversation.request.status === 'pending') {
+              <button class="btn btn-accept" (click)="acceptRequest()">
+                ✓ Aceptar
+              </button>
+              <button class="btn btn-propose" (click)="proposeTime()">
+                🕒 Proponer otra hora
+              </button>
+              <button class="btn btn-reject" (click)="rejectRequest()">
+                ✕ Rechazar
+              </button>
+            }
+            
+            @if (selectedConversation.request.status === 'accepted' || selectedConversation.request.status === 'rescheduled') {
+              <button class="btn btn-finish" (click)="finishRequest()">
+                ✓ Marcar como finalizado
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Chat (solo mensajes libres) -->
+      <div class="chat-section">
+        <h3>Conversación</h3>
+        
+        <div class="messages-container">
+          @for (msg of freeChatMessages; track msg.id) {
+            <div 
+              class="message"
+              [class.user-message]="msg.sender === 'user'"
+              [class.pro-message]="msg.sender === 'professional'"
+            >
+              <div class="message-bubble">
+                <p>{{ msg.text }}</p>
+                <span class="message-time">{{ msg.createdAt | date: 'short' }}</span>
+              </div>
+            </div>
+          }
+          
+          @if (freeChatMessages.length === 0) {
+            <p class="no-messages">No hay mensajes todavía. Escribe algo para empezar.</p>
+          }
+        </div>
+
+        <!-- Input para enviar mensajes -->
+        <div class="message-input">
+          <input 
+            type="text" 
+            [(ngModel)]="newMessage"
+            (keyup.enter)="sendMessage()"
+            placeholder="Escribe un mensaje..."
+          >
+          <button 
+            (click)="sendMessage()"
+            [disabled]="!newMessage.trim()"
+            class="send-button"
+          >
+            Enviar
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

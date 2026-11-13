@@ -1,0 +1,46 @@
+<div class="dashboard-container">
+  <h1>Dashboard</h1>
+  
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-content">
+        <p class="stat-label">Solicitudes Pendientes</p>
+        <p class="stat-value">{{ pendingCount | async }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">✓</div>
+      <div class="stat-content">
+        <p class="stat-label">Solicitudes Aceptadas</p>
+        <p class="stat-value">{{ acceptedCount | async }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">✔️</div>
+      <div class="stat-content">
+        <p class="stat-label">Servicios Finalizados</p>
+        <p class="stat-value">{{ finishedCount | async }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">💬</div>
+      <div class="stat-content">
+        <p class="stat-label">Mensajes sin leer</p>
+        <p class="stat-value">{{ unreadCount | async }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-section">
+    <h2>Próximos pasos</h2>
+    <ul>
+      <li>Revisa las solicitudes pendientes en la sección de Solicitudes</li>
+      <li>Actualiza tu perfil y disponibilidad</li>
+      <li>Responde a los mensajes de tus clientes</li>
+    </ul>
+  </div>
+</div>

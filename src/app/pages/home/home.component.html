@@ -263,11 +263,27 @@
       <div class="professionals-grid">
         <app-professional-card
           *ngFor="let professional of professionals"
-          [professional]="professional">
+          [professional]="professional"
+          (cardClick)="openModal($event)">
         </app-professional-card>
       </div>
     </div>
   </section>
+
+  <!-- Modal del Profesional -->
+  <app-professional-modal
+    [isOpen]="isModalOpen"
+    [professional]="selectedProfessional"
+    (closeModal)="closeModal()"
+    (requestService)="handleRequestService($event)">
+  </app-professional-modal>
+
+  <!-- Chat del Profesional (DESPUÉS del modal para evitar conflictos) -->
+  <app-professional-chat
+    [isOpen]="isChatOpen"
+    [professional]="chatProfessional"
+    (closeChat)="closeChat()">
+  </app-professional-chat>
 
   <!-- Para Clientes y Profesionales -->
   <section class="dual-section">

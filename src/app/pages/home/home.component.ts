@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HeroSectionComponent } from '../../components/hero-section/hero-section.component';
 import { ProfessionalCardComponent, Professional } from '../../components/professional-card/professional-card.component';
+import { ProfessionalModalComponent } from '../../components/professional-modal/professional-modal.component';
+import { ProfessionalChatComponent } from '../../components/professional-chat/professional-chat.component';
 
 interface MapProfessional {
   id: number;
@@ -16,7 +18,7 @@ interface MapProfessional {
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, HeroSectionComponent, ProfessionalCardComponent],
+  imports: [CommonModule, HeroSectionComponent, ProfessionalCardComponent, ProfessionalModalComponent, ProfessionalChatComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -25,6 +27,14 @@ export class HomeComponent implements OnInit {
   mapProfessionals: MapProfessional[] = [];
   selectedId: number | null = null;
   city = 'Neiva';
+  
+  // Modal state
+  isModalOpen: boolean = false;
+  selectedProfessional: Professional | null = null;
+  
+  // Chat state
+  isChatOpen: boolean = false;
+  chatProfessional: Professional | null = null;
 
   // Posición de cada pin en el mapa (en %), por orden de aparición.
   // Solo se muestran tantos profesionales como posiciones haya aquí.
@@ -150,5 +160,36 @@ export class HomeComponent implements OnInit {
 
   initials(name: string): string {
     return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+  }
+
+  // Modal methods
+  openModal(professional: Professional): void {
+    this.selectedProfessional = professional;
+    this.isModalOpen = true;
+    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+  }
+
+  closeModal(): void {
+    this.isModalOpen = false;
+    this.selectedProfessional = null;
+    document.body.style.overflow = ''; // Restaurar scroll
+  }
+
+  handleRequestService(professional: Professional): void {
+    console.log('Solicitar servicio de:', professional.name);
+    // Cerrar el modal y abrir el chat
+    this.closeModal();
+    
+    // Pequeño delay para evitar conflictos con animaciones
+    setTimeout(() => {
+      this.chatProfessional = professional;
+      this.isChatOpen = true;
+    }, 200);
+  }
+
+  closeChat(): void {
+    this.isChatOpen = false;
+    this.chatProfessional = null;
+    document.body.style.overflow = ''; // Restaurar scroll
   }
 }

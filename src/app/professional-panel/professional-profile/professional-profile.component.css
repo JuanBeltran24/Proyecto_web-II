@@ -1,0 +1,156 @@
+.profile-container {
+  max-width: 800px;
+}
+
+.profile-container h1 {
+  font-size: 2rem;
+  color: #0d5959;
+  margin: 0 0 2rem;
+}
+
+.profile-card,
+.availability-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.profile-card h2,
+.availability-card h2 {
+  font-size: 1.5rem;
+  color: #111827;
+  margin: 0 0 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #0d5959;
+  box-shadow: 0 0 0 3px rgba(13, 89, 89, 0.1);
+}
+
+.form-group input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 0.5rem;
+  color: #6b7280;
+  font-size: 0.8125rem;
+}
+
+.btn-primary {
+  background: #0d5959;
+  color: white;
+  padding: 0.875rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: #0a4545;
+}
+
+.save-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.availability-control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.availability-label {
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.availability-status {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: #ef4444;
+}
+
+.availability-status.available {
+  color: #22c55e;
+}
+
+.availability-control small {
+  display: block;
+  color: #6b7280;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
+.btn-toggle {
+  padding: 0.875rem 2rem;
+  border: 2px solid #0d5959;
+  background: white;
+  color: #0d5959;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-toggle:hover {
+  background: #f0f9ff;
+}
+
+.btn-toggle.active {
+  background: #0d5959;
+  color: white;
+}
+
+@media (max-width: 640px) {
+  .availability-control {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-toggle {
+    width: 100%;
+  }
+}

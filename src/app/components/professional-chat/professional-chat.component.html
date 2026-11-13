@@ -1,0 +1,259 @@
+<!-- Chat Overlay -->
+<div 
+  class="chat-overlay" 
+  *ngIf="isOpen && professional"
+  (click)="onOverlayClick($event)"
+  [@fadeIn]
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'Chat con ' + professional.name">
+  
+  <!-- Chat Container -->
+  <div class="chat-container" [@slideIn]>
+    
+    <!-- Header -->
+    <div class="chat-header">
+      <button 
+        type="button" 
+        class="btn-back" 
+        (click)="onClose()"
+        aria-label="Cerrar chat">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+
+      <div class="professional-info">
+        <div class="professional-avatar-container">
+          <img [src]="professional.photo" [alt]="professional.name" class="professional-avatar">
+          <span class="online-indicator" title="Disponible"></span>
+        </div>
+        <div class="professional-details">
+          <div class="professional-name-row">
+            <span class="professional-name">{{ professional.name }}</span>
+            <svg *ngIf="professional.isVerified" 
+                 width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"
+                 class="verified-icon"
+                 title="Verificado">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <span class="professional-specialty">{{ professional.specialty }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Safety Notice -->
+    <div class="safety-notice">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      <span>Por tu seguridad, coordina y paga siempre dentro de la plataforma.</span>
+    </div>
+
+    <!-- Messages List -->
+    <div class="messages-container" #messagesContainer aria-live="polite" aria-atomic="false">
+      <div class="messages-list">
+        <div 
+          *ngFor="let message of messages; trackBy: trackByMessageId"
+          class="message-wrapper"
+          [class.message-user]="message.sender === 'user'"
+          [class.message-professional]="message.sender === 'professional'"
+          [class.message-bot]="message.sender === 'bot'">
+          
+          <!-- Professional avatar (left side) -->
+          <div class="message-avatar" *ngIf="message.sender === 'professional'">
+            <img [src]="professional.photo" [alt]="professional.name">
+          </div>
+
+          <!-- Message bubble -->
+          <div class="message-bubble-container">
+            
+            <!-- Text message -->
+            <div class="message-bubble" *ngIf="message.type === 'text'">
+              <div class="message-content">
+                <svg *ngIf="message.sender === 'bot'" 
+                     width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     class="bot-icon">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/>
+                  <circle cx="8" cy="15" r="1"/>
+                  <circle cx="16" cy="15" r="1"/>
+                  <path d="M9 11V6a3 3 0 016 0v5"/>
+                </svg>
+                <span class="message-text">{{ message.text }}</span>
+              </div>
+              <span class="message-time">{{ formatTime(message.createdAt) }}</span>
+            </div>
+
+            <!-- Request card -->
+            <div class="request-card" *ngIf="message.type === 'request_card' && message.card">
+              <div class="request-header">
+                <span class="request-title">Solicitud de servicio</span>
+                <span 
+                  class="request-status-badge"
+                  [style.color]="statusConfig[message.card.status].color"
+                  [style.background]="statusConfig[message.card.status].bgColor">
+                  {{ statusConfig[message.card.status].label }}
+                </span>
+              </div>
+              
+              <div class="request-body">
+                <div class="request-item">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                  </svg>
+                  <div>
+                    <span class="request-label">Servicio</span>
+                    <span class="request-value">{{ message.card.service }}</span>
+                  </div>
+                </div>
+
+                <div class="request-item">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                  <div>
+                    <span class="request-label">Problema</span>
+                    <span class="request-value">{{ message.card.description }}</span>
+                  </div>
+                </div>
+
+                <div class="request-row">
+                  <div class="request-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <div>
+                      <span class="request-label">Día</span>
+                      <span class="request-value">{{ message.card.day }}</span>
+                    </div>
+                  </div>
+
+                  <div class="request-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <div>
+                      <span class="request-label">Hora</span>
+                      <span class="request-value">{{ message.card.time }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="request-item">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <div>
+                    <span class="request-label">Dirección</span>
+                    <span class="request-value">{{ message.card.address }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typing indicator -->
+        <div 
+          class="message-wrapper message-professional typing-indicator-wrapper" 
+          *ngIf="uiState.isTyping">
+          <div class="message-avatar">
+            <img [src]="professional.photo" [alt]="professional.name">
+          </div>
+          <div class="message-bubble-container">
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      
+      <!-- Quick options (chips) -->
+      <div class="quick-options" *ngIf="uiState.inputMode === 'chips'">
+        <button 
+          *ngFor="let option of uiState.options"
+          type="button"
+          class="chip-button"
+          (click)="onChipClick(option)">
+          {{ option.label }}
+        </button>
+      </div>
+
+      <!-- Text input -->
+      <div class="text-input-container" *ngIf="uiState.inputMode === 'text'">
+        <input
+          #textInput
+          type="text"
+          class="text-input"
+          [(ngModel)]="textMessage"
+          [placeholder]="uiState.placeholder"
+          (keydown)="onTextKeydown($event)"
+          [attr.aria-label]="uiState.placeholder">
+        <button 
+          type="button"
+          class="btn-send"
+          (click)="onTextSubmit()"
+          [disabled]="!textMessage.trim()"
+          aria-label="Enviar mensaje">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Date input -->
+      <div class="date-input-container" *ngIf="uiState.inputMode === 'date'">
+        <input
+          type="date"
+          class="date-input"
+          [(ngModel)]="dateValue"
+          [min]="minDate"
+          aria-label="Selecciona una fecha">
+        <button 
+          type="button"
+          class="btn-send"
+          (click)="onDateSubmit()"
+          [disabled]="!dateValue"
+          aria-label="Confirmar fecha">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Time input -->
+      <div class="time-input-container" *ngIf="uiState.inputMode === 'time'">
+        <input
+          type="time"
+          class="time-input"
+          [(ngModel)]="timeValue"
+          aria-label="Selecciona una hora">
+        <button 
+          type="button"
+          class="btn-send"
+          (click)="onTimeSubmit()"
+          [disabled]="!timeValue"
+          aria-label="Confirmar hora">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
