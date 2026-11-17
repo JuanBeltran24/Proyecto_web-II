@@ -15,6 +15,9 @@ export interface Professional {
   priceDescription: string;
   isVerified: boolean;
   backgroundCheck: string;
+  // Coordenadas opcionales para el mapa (se llenarán desde professional-locations.ts)
+  lat?: number;
+  lng?: number;
 }
 
 @Component({
