@@ -5,6 +5,7 @@ import {
   EventEmitter, 
   OnInit, 
   OnChanges, 
+  OnDestroy,
   SimpleChanges,
   ElementRef,
   ViewChild,
@@ -25,6 +26,7 @@ import {
   REQUEST_STATUS_CONFIG 
 } from './chat.models';
 import { getServicesBySpecialty } from './professional-services';
+import { NotificationService } from '../../notifications/notification.service';
 
 @Component({
   selector: 'app-professional-chat',
@@ -52,7 +54,7 @@ import { getServicesBySpecialty } from './professional-services';
     ])
   ]
 })
-export class ProfessionalChatComponent implements OnInit, OnChanges, AfterViewChecked {
+export class ProfessionalChatComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
   @Input() professional: Professional | null = null;
   @Input() isOpen: boolean = false;
   @Output() closeChat = new EventEmitter<void>();
@@ -61,7 +63,9 @@ export class ProfessionalChatComponent implements OnInit, OnChanges, AfterViewCh
   @ViewChild('textInput') textInput?: ElementRef<HTMLInputElement>;
 
   private chatService = inject(ChatService);
+  private notificationService = inject(NotificationService);
   private shouldScrollToBottom = false;
+  private currentConversationId: string | null = null;
 
   messages: ChatMessage[] = [];
   uiState: ChatUiState = {
@@ -103,6 +107,13 @@ export class ProfessionalChatComponent implements OnInit, OnChanges, AfterViewCh
     if (changes['isOpen'] && this.isOpen && this.professional) {
       const services = getServicesBySpecialty(this.professional.specialty);
       this.chatService.start(this.professional, services);
+      
+      // Establecer conversación activa para el sistema de notificaciones
+      this.currentConversationId = this.chatService.getConversationId();
+      if (this.currentConversationId) {
+        this.notificationService.setActiveConversation(this.currentConversationId);
+      }
+      
       document.body.style.overflow = 'hidden';
       
       // Enfocar el input después de un delay
@@ -110,7 +121,19 @@ export class ProfessionalChatComponent implements OnInit, OnChanges, AfterViewCh
         this.focusInput();
       }, 400);
     } else if (changes['isOpen'] && !this.isOpen) {
+      // Limpiar conversación activa al cerrar
+      if (this.currentConversationId) {
+        this.notificationService.setActiveConversation(null);
+        this.currentConversationId = null;
+      }
       document.body.style.overflow = '';
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar conversación activa al destruir el componente
+    if (this.currentConversationId) {
+      this.notificationService.setActiveConversation(null);
     }
   }
 
@@ -129,6 +152,12 @@ export class ProfessionalChatComponent implements OnInit, OnChanges, AfterViewCh
   }
 
   onClose(): void {
+    // Limpiar conversación activa al cerrar
+    if (this.currentConversationId) {
+      this.notificationService.setActiveConversation(null);
+      this.currentConversationId = null;
+    }
+    
     document.body.style.overflow = '';
     this.closeChat.emit();
   }

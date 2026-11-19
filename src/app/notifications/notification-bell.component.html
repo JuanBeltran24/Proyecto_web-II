@@ -1,0 +1,104 @@
+<div class="notification-bell-container">
+  <!-- Botón de campana -->
+  <button 
+    class="notification-bell-button"
+    (click)="togglePanel()"
+    [attr.aria-label]="'Notificaciones' + ((unreadCount$ | async) ? ' (' + (unreadCount$ | async) + ' nuevas)' : '')"
+    type="button">
+    <svg class="bell-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.89 22 12 22ZM18 16V11C18 7.93 16.36 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.63 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z" fill="currentColor"/>
+    </svg>
+    <span class="badge" *ngIf="(unreadCount$ | async) as count">{{ count > 99 ? '99+' : count }}</span>
+  </button>
+
+  <!-- Panel de notificaciones -->
+  <div class="notification-panel" *ngIf="isOpen" role="dialog" aria-label="Panel de notificaciones">
+    
+    <!-- Vista de ajustes -->
+    <div class="settings-view" *ngIf="showSettings">
+      <div class="panel-header">
+        <button class="back-button" (click)="toggleSettings()" aria-label="Volver">
+          ← Volver
+        </button>
+        <h3>Ajustes de notificaciones</h3>
+      </div>
+
+      <div class="settings-content">
+        <div class="setting-item">
+          <label>
+            <input 
+              type="checkbox" 
+              [checked]="prefs.toasts"
+              (change)="updateToasts($any($event.target).checked)">
+            <span>Mostrar toasts</span>
+          </label>
+          <p class="setting-description">Muestra notificaciones emergentes en la esquina de la pantalla</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista principal de notificaciones -->
+    <div class="main-view" *ngIf="!showSettings">
+      <div class="panel-header">
+        <h3>Notificaciones</h3>
+        <div class="header-actions">
+          <button 
+            class="action-button" 
+            (click)="markAllAsRead()"
+            *ngIf="(unreadCount$ | async) as count"
+            [attr.aria-label]="'Marcar ' + count + ' como leídas'">
+            Marcar todas como leídas
+          </button>
+          <button 
+            class="icon-button" 
+            (click)="toggleSettings()"
+            aria-label="Ajustes">
+            ⚙️
+          </button>
+        </div>
+      </div>
+
+      <div class="notifications-list" *ngIf="(notifications$ | async) as notifications">
+        <!-- Lista de notificaciones -->
+        <div 
+          *ngFor="let notif of notifications"
+          class="notification-item"
+          [class.unread]="!notif.read"
+          (click)="openNotification(notif)"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="openNotification(notif)"
+          (keydown.space)="openNotification(notif); $event.preventDefault()">
+          
+          <div class="notif-icon">{{ getIcon(notif) }}</div>
+          
+          <div class="notif-content">
+            <div class="notif-title">{{ notif.title }}</div>
+            <div class="notif-message">{{ notif.body }}</div>
+            <div class="notif-time">{{ formatTime(notif.createdAt) }}</div>
+          </div>
+          
+          <button 
+            class="remove-button"
+            (click)="removeNotification($event, notif.id)"
+            aria-label="Eliminar notificación">
+            ×
+          </button>
+        </div>
+
+        <!-- Estado vacío -->
+        <div class="empty-state" *ngIf="notifications.length === 0">
+          <div class="empty-icon">🔕</div>
+          <p>No tienes notificaciones</p>
+        </div>
+
+        <!-- Botón limpiar todo -->
+        <div class="panel-footer" *ngIf="notifications.length > 0">
+          <button class="clear-all-button" (click)="clearAll()">
+            Limpiar todo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

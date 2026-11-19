@@ -53,6 +53,13 @@ export class ChatService {
   ui$ = this.uiStateSubject.asObservable();
 
   /**
+   * Obtiene el ID de la conversación activa
+   */
+  getConversationId(): string | null {
+    return this.currentConversationId;
+  }
+
+  /**
    * Inicia el chat con un profesional
    * Si ya existe una conversación, la restaura; si no, crea una nueva
    */

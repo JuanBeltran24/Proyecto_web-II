@@ -1,11 +1,14 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, NgZone, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HeroSectionComponent } from '../../components/hero-section/hero-section.component';
 import { ProfessionalCardComponent, Professional } from '../../components/professional-card/professional-card.component';
 import { ProfessionalModalComponent } from '../../components/professional-modal/professional-modal.component';
 import { ProfessionalChatComponent } from '../../components/professional-chat/professional-chat.component';
+import { ChatLauncherService } from '../../notifications/chat-launcher.service';
+import { toProfessionalKey } from '../../components/professional-chat/chat-store.service';
 import { 
   NEIVA_CENTER, 
   NEIVA_AREAS, 
@@ -39,6 +42,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer', { static: false }) mapContainer?: ElementRef<HTMLDivElement>;
   
   private ngZone = inject(NgZone);
+  private router = inject(Router);
+  private chatLauncher = inject(ChatLauncherService);
   private L?: LeafletModule;
   private map?: LeafletMap;
   private markers: LeafletMarker[] = [];
@@ -88,6 +93,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor() {
     // Constructor vacío - eventos de popup manejados en addProfessionalMarkers
+    
+    // Suscribirse al servicio de lanzamiento de chat
+    this.chatLauncher.launch$
+      .pipe(takeUntilDestroyed())
+      .subscribe(request => {
+        this.handleChatLaunchRequest(request.conversationId);
+      });
   }
 
   private specialtyStyle(specialty: string): { color: string; icon: string; label: string } {
@@ -716,6 +728,28 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.chatProfessional = professional;
       this.isChatOpen = true;
     }, 200);
+  }
+
+  /**
+   * Maneja solicitud de abrir chat desde notificaciones.
+   * Busca el profesional por conversationId (nombre normalizado).
+   */
+  private handleChatLaunchRequest(conversationId: string): void {
+    // Buscar profesional cuyo nombre normalizado coincida con el conversationId
+    const professional = this.professionals.find(p => {
+      const normalizedName = toProfessionalKey(p.name);
+      // El conversationId tiene formato: clientId__professionalKey
+      // Extraer la parte del profesional
+      const parts = conversationId.split('__');
+      const professionalKey = parts.length > 1 ? parts[1] : conversationId;
+      return normalizedName === professionalKey;
+    });
+
+    if (professional) {
+      this.handleRequestService(professional);
+    } else {
+      console.warn('No se encontró profesional para conversationId:', conversationId);
+    }
   }
 
   closeChat(): void {

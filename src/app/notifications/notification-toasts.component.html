@@ -1,0 +1,37 @@
+<div class="toasts-container" role="status" aria-live="polite" aria-atomic="false">
+  <div 
+    *ngFor="let toast of toasts; trackBy: trackById"
+    class="toast"
+    [class.paused]="toast.isPaused"
+    (mouseenter)="pauseToast(toast)"
+    (mouseleave)="resumeToast(toast)"
+    (focusin)="pauseToast(toast)"
+    (focusout)="resumeToast(toast)"
+    (click)="openToast(toast)"
+    role="alert"
+    tabindex="0"
+    (keydown.enter)="openToast(toast)"
+    (keydown.space)="openToast(toast); $event.preventDefault()">
+    
+    <div class="toast-content">
+      <div class="toast-icon">{{ getIcon(toast) }}</div>
+      
+      <div class="toast-text">
+        <div class="toast-title">{{ toast.title }}</div>
+        <div class="toast-message">{{ toast.body }}</div>
+      </div>
+      
+      <button 
+        class="toast-close"
+        (click)="removeToast(toast.id); $event.stopPropagation()"
+        aria-label="Cerrar notificación"
+        type="button">
+        ×
+      </button>
+    </div>
+    
+    <div class="toast-progress">
+      <div class="toast-progress-bar" [style.width.%]="toast.progress"></div>
+    </div>
+  </div>
+</div>

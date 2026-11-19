@@ -29,7 +29,20 @@
   </aside>
 
   <!-- Main Content -->
-  <main class="main-content">
-    <router-outlet></router-outlet>
-  </main>
+  <div class="main-wrapper">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <h1 class="page-title">Bienvenido</h1>
+      </div>
+      <div class="top-bar-right">
+        <app-notification-bell></app-notification-bell>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 </div>

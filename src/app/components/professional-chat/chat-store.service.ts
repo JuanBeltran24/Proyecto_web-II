@@ -7,6 +7,7 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, fromEvent } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Conversation, ChatMessage, ServiceRequest } from './chat.models';
+import { NotificationStore } from '../../notifications/notification-store.service';
 
 const STORE_KEY = 'ahc_chat_store_v1';
 const CLIENT_KEY = 'ahc_client_v1';
@@ -37,8 +38,10 @@ export function toProfessionalKey(name: string): string {
 })
 export class ChatStore {
   private conversationsSubject = new BehaviorSubject<Conversation[]>([]);
+  private notificationStore = inject(NotificationStore);
   
   conversations$: Observable<Conversation[]> = this.conversationsSubject.asObservable();
+  private lastRequestNotificationTime = new Map<string, number>();
 
   constructor() {
     this.load();
@@ -148,6 +151,7 @@ export class ChatStore {
    * Agrega un mensaje a una conversación
    * Suma unreadForPro si sender='user' y unreadForUser si sender='professional'
    * Solo para mensajes de texto no guiados
+   * Genera notificaciones para message_new (respetando anti-duplicado)
    */
   addMessage(convId: string, message: Omit<ChatMessage, 'id' | 'createdAt'>): void {
     this.mutate(data => {
@@ -169,6 +173,42 @@ export class ChatStore {
           conv.unreadForPro++;
         } else if (message.sender === 'professional') {
           conv.unreadForUser++;
+        }
+      }
+
+      // NOTIFICACIONES: message_new para mensajes de texto no guiados
+      if (message.type === 'text' && !message.guided) {
+        // Verificar anti-duplicado: si se creó request_* hace menos de 5s, NO crear message_new
+        const lastRequestTime = this.lastRequestNotificationTime.get(convId) || 0;
+        const shouldSkip = Date.now() - lastRequestTime < 5000;
+
+        if (!shouldSkip) {
+          const text = message.text ?? '';
+          const truncatedText = text.length > 80 
+            ? text.substring(0, 80) + '...' 
+            : text;
+
+          if (message.sender === 'user') {
+            // Notificación al profesional
+            this.notificationStore.push({
+              type: 'message_new',
+              title: `Mensaje de ${conv.clientName}`,
+              body: truncatedText,
+              conversationId: convId,
+              recipientType: 'professional',
+              recipientId: conv.professionalKey,
+            });
+          } else if (message.sender === 'professional') {
+            // Notificación al usuario
+            this.notificationStore.push({
+              type: 'message_new',
+              title: `Mensaje de ${conv.professionalName}`,
+              body: truncatedText,
+              conversationId: convId,
+              recipientType: 'user',
+              recipientId: conv.clientId,
+            });
+          }
         }
       }
     });
@@ -206,6 +246,7 @@ export class ChatStore {
    * Establece la solicitud de una conversación
    * Sincroniza las tarjetas request_card en los mensajes
    * Suma unreadForPro
+   * Genera notificación request_new al profesional y marca timestamp anti-duplicado
    */
   setRequest(convId: string, request: ServiceRequest): void {
     this.mutate(data => {
@@ -222,6 +263,22 @@ export class ChatStore {
           msg.card = { ...request };
         }
       });
+
+      // NOTIFICACIÓN: request_new al profesional
+      const serviceName = request.service || 'un servicio';
+      const dateStr = request.day || 'fecha por confirmar';
+
+      this.notificationStore.push({
+        type: 'request_new',
+        title: 'Nueva solicitud',
+        body: `${conv.clientName} solicitó ${serviceName} para el ${dateStr}`,
+        conversationId: convId,
+        recipientType: 'professional',
+        recipientId: conv.professionalKey,
+      });
+
+      // Marcar timestamp para anti-duplicado
+      this.lastRequestNotificationTime.set(convId, Date.now());
     });
   }
 
@@ -229,11 +286,15 @@ export class ChatStore {
    * Actualiza la solicitud de una conversación (el profesional cambia estado/datos)
    * Sincroniza las tarjetas request_card en los mensajes
    * Suma unreadForUser
+   * Genera notificaciones de cambio de estado al usuario
    */
   updateRequest(convId: string, patch: Partial<ServiceRequest>): void {
     this.mutate(data => {
       const conv = data.conversations.find(c => c.id === convId);
       if (!conv || !conv.request) return;
+
+      const oldStatus = conv.request.status;
+      const newStatus = patch.status;
 
       conv.request = { ...conv.request, ...patch };
       conv.updatedAt = new Date();
@@ -245,6 +306,47 @@ export class ChatStore {
           msg.card = { ...conv.request! };
         }
       });
+
+      // NOTIFICACIONES: cambio de estado al usuario
+      if (newStatus && newStatus !== oldStatus && newStatus !== 'draft') {
+        let notifType: 'request_accepted' | 'request_rejected' | 'request_rescheduled' | 'request_finished';
+        let title: string;
+        let body: string;
+
+        switch (newStatus) {
+          case 'accepted':
+            notifType = 'request_accepted';
+            title = 'Solicitud aceptada';
+            body = `${conv.professionalName} aceptó tu solicitud de servicio`;
+            break;
+          case 'rejected':
+            notifType = 'request_rejected';
+            title = 'Solicitud rechazada';
+            body = `${conv.professionalName} no puede atender tu solicitud en este momento`;
+            break;
+          case 'rescheduled':
+            notifType = 'request_rescheduled';
+            title = 'Solicitud reprogramada';
+            body = `${conv.professionalName} propuso una nueva fecha para tu solicitud`;
+            break;
+          case 'finished':
+            notifType = 'request_finished';
+            title = 'Servicio finalizado';
+            body = `${conv.professionalName} marcó el servicio como completado`;
+            break;
+          default:
+            return; // No generar notificación para otros estados
+        }
+
+        this.notificationStore.push({
+          type: notifType,
+          title,
+          body,
+          conversationId: convId,
+          recipientType: 'user',
+          recipientId: conv.clientId,
+        });
+      }
     });
   }
 

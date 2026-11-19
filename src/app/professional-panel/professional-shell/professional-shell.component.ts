@@ -1,10 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ProfessionalSessionService } from '../professional-session.service';
+import { NotificationBellComponent } from '../../notifications/notification-bell.component';
 
 @Component({
   selector: 'app-professional-shell',
-  imports: [RouterModule],
+  imports: [RouterModule, NotificationBellComponent],
   templateUrl: './professional-shell.component.html',
   styleUrl: './professional-shell.component.css'
 })
