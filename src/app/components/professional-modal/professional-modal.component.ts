@@ -7,11 +7,14 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  HostListener
+  HostListener,
+  inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { trigger, style, transition, animate } from '@angular/animations';
 import { Professional } from '../professional-card/professional-card.component';
+import { ReviewStore } from '../../client-profile/review-store.service';
+import { toProfessionalKey } from '../professional-chat/chat-store.service';
 
 interface Review {
   id: string;
@@ -58,6 +61,8 @@ export class ProfessionalModalComponent implements OnInit, OnChanges, OnDestroy 
   @Input() isOpen: boolean = false;
   @Output() closeModal = new EventEmitter<void>();
   @Output() requestService = new EventEmitter<Professional>();
+  
+  private reviewStore = inject(ReviewStore);
 
   // Datos extendidos del profesional (en producción vendrían del backend)
   experience: number = 5;
@@ -168,29 +173,50 @@ export class ProfessionalModalComponent implements OnInit, OnChanges, OnDestroy 
   }
 
   getReviews(): Review[] {
-    return [
+    if (!this.professional) return [];
+    
+    // Obtener reseñas reales del ReviewStore
+    const professionalKey = toProfessionalKey(this.professional.name);
+    const realReviews: Review[] = [];
+    
+    this.reviewStore.forProfessional$(professionalKey).subscribe(reviews => {
+      reviews.forEach(review => {
+        realReviews.push({
+          id: review.id,
+          clientName: review.clientName,
+          rating: review.rating,
+          comment: review.comment,
+          date: review.createdAt.toISOString()
+        });
+      });
+    }).unsubscribe();
+    
+    // Agregar reseñas de ejemplo después de las reales
+    const exampleReviews: Review[] = [
       {
-        id: '1',
+        id: 'example_1',
         clientName: 'María G.',
         rating: 5,
         comment: 'Excelente servicio, muy profesional y puntual.',
         date: '2024-11-10'
       },
       {
-        id: '2',
+        id: 'example_2',
         clientName: 'Carlos R.',
         rating: 4,
         comment: 'Buen trabajo, aunque llegó un poco tarde.',
         date: '2024-11-05'
       },
       {
-        id: '3',
+        id: 'example_3',
         clientName: 'Ana M.',
         rating: 5,
         comment: 'Súper recomendado, resolvió todo muy rápido.',
         date: '2024-10-28'
       }
     ];
+    
+    return [...realReviews, ...exampleReviews];
   }
 
   onClose(): void {

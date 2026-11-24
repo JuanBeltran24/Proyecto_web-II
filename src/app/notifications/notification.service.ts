@@ -1,6 +1,6 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { fromEvent, map } from 'rxjs';
+import { BehaviorSubject, fromEvent, map } from 'rxjs';
 import { NotificationStore } from './notification-store.service';
 import { AppNotification, NotificationPrefs, RecipientType, DEFAULT_PREFS } from './notification.models';
 import { ChatLauncherService } from './chat-launcher.service';
@@ -10,6 +10,16 @@ const PROFESSIONAL_BASE = '/profesional';
 const BROWSER_PERMISSION_KEY = 'ahc_browser_notification_permission';
 const LAST_NOTIFICATION_KEY = 'ahc_last_notification_time';
 const ANTI_DUPLICATE_WINDOW_MS = 5000;
+const MAX_VISIBLE_TOASTS = 3;
+const RECENT_NOTIFICATION_WINDOW_MS = 10000; // 10 segundos
+
+export interface ToastNotification extends AppNotification {
+  progress: number;
+  isPaused: boolean;
+  timeoutId?: any;
+  startTime?: number;
+  remainingTime?: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
@@ -22,11 +32,121 @@ export class NotificationService {
   private activeConversationId: string | null = null;
   private audioContext: AudioContext | null = null;
   private prefs: NotificationPrefs = { ...DEFAULT_PREFS };
+  
+  // BASELINE: IDs de notificaciones ya vistas para evitar toasts de notificaciones viejas
+  private seenIds = new Set<string>();
+  
+  // TOASTS activos (para límite de 3)
+  private activeToasts$ = new BehaviorSubject<ToastNotification[]>([]);
+  toasts$ = this.activeToasts$.asObservable();
 
   constructor() {
+    // PASO 1: Cargar BASELINE de notificaciones existentes SÍNCRONAMENTE
+    this.loadBaselineSync();
+    
+    // PASO 2: Cargar preferencias y configurar listeners
     this.loadPreferences();
     this.setupVisibilityListener();
     this.setupNewNotificationListener();
+    this.setupToastDetection();
+  }
+
+  // ============== AUDIENCIA ==============
+
+  /**
+   * Carga el baseline de notificaciones existentes de forma SÍNCRONA
+   * para evitar que se muestren toasts de notificaciones viejas al arrancar.
+   */
+  private loadBaselineSync(): void {
+    if (typeof localStorage === 'undefined') return;
+    
+    try {
+      const stored = localStorage.getItem('ahc_notifications_v1');
+      if (stored) {
+        const data = JSON.parse(stored, (key: string, value: any) => {
+          // Reviver para fechas
+          if (typeof value === 'string') {
+            const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+            if (dateRegex.test(value)) {
+              return new Date(value);
+            }
+          }
+          return value;
+        });
+        
+        // Agregar TODOS los IDs al baseline (sin importar audiencia)
+        if (data.notifications && Array.isArray(data.notifications)) {
+          data.notifications.forEach((n: AppNotification) => {
+            this.seenIds.add(n.id);
+          });
+          console.log('[NotificationService] Baseline cargado:', this.seenIds.size, 'notificaciones');
+        }
+      }
+    } catch (e) {
+      console.warn('Error cargando baseline de notificaciones:', e);
+    }
+  }
+
+  /**
+   * Configura la detección de notificaciones nuevas para mostrar toasts
+   */
+  private setupToastDetection(): void {
+    this.store.notifications$.subscribe(allNotifications => {
+      const recipient = this.getCurrentRecipient();
+      if (!recipient) return;
+
+      // Filtrar notificaciones para la audiencia actual
+      const myNotifications = allNotifications.filter(n =>
+        n.recipientType === recipient.type && n.recipientId === recipient.id
+      );
+
+      myNotifications.forEach(notif => {
+        // Si ya la vimos, agregar al set pero NO mostrar toast
+        if (this.seenIds.has(notif.id)) {
+          return;
+        }
+
+        // Agregar al set de vistas SIEMPRE
+        this.seenIds.add(notif.id);
+
+        // Verificar condiciones para mostrar toast
+        const shouldShowToast = this.shouldShowToastForNotification(notif);
+        
+        if (shouldShowToast) {
+          console.log('[NotificationService] Mostrando toast para:', notif.type, notif.id);
+          this.showToast(notif);
+          
+          // Reproducir sonido
+          if (this.prefs.sound) {
+            this.playNotificationSound();
+          }
+          
+          // Mostrar notificación del navegador
+          this.showBrowserNotification(notif);
+        }
+      });
+    });
+  }
+
+  /**
+   * Verifica si una notificación debe mostrar toast/sonido/notificación del navegador
+   */
+  private shouldShowToastForNotification(notif: AppNotification): boolean {
+    // 1. No leída
+    if (notif.read) return false;
+
+    // 2. Creada recientemente (últimos 10 segundos)
+    const age = Date.now() - notif.createdAt.getTime();
+    if (age > RECENT_NOTIFICATION_WINDOW_MS) return false;
+
+    // 3. Las preferencias lo permiten
+    if (!this.prefs.toasts) return false;
+
+    // 4. No se está mostrando ya un toast con el mismo ID
+    const activeToasts = this.activeToasts$.value;
+    if (activeToasts.some(t => t.id === notif.id)) return false;
+
+    return true;
   }
 
   // ============== AUDIENCIA ==============
@@ -61,6 +181,120 @@ export class NotificationService {
       console.warn('Error leyendo cliente:', e);
     }
     return null;
+  }
+
+  // ============== TOASTS ==============
+
+  private showToast(notification: AppNotification): void {
+    const activeToasts = this.activeToasts$.value;
+    
+    // Manejar colapso de mensajes
+    if (notification.type === 'message_new') {
+      const existingIndex = activeToasts.findIndex(t =>
+        t.conversationId === notification.conversationId && t.type === 'message_new'
+      );
+      
+      if (existingIndex !== -1) {
+        // Actualizar toast existente
+        const existing = activeToasts[existingIndex];
+        existing.count = notification.count || 1;
+        existing.title = notification.title;
+        existing.body = notification.body;
+        existing.progress = 100;
+        existing.startTime = Date.now();
+        existing.remainingTime = 6000;
+        
+        // Reiniciar timer
+        if (existing.timeoutId) clearTimeout(existing.timeoutId);
+        if ((existing as any).intervalId) clearInterval((existing as any).intervalId);
+        this.startToastTimer(existing);
+        
+        this.activeToasts$.next([...activeToasts]);
+        return;
+      }
+    }
+
+    // Limitar a MAX_VISIBLE_TOASTS
+    if (activeToasts.length >= MAX_VISIBLE_TOASTS) {
+      const oldest = activeToasts[0];
+      this.removeToast(oldest.id);
+    }
+
+    const toast: ToastNotification = {
+      ...notification,
+      progress: 100,
+      isPaused: false,
+      startTime: Date.now(),
+      remainingTime: 6000,
+    };
+
+    this.activeToasts$.next([...activeToasts, toast]);
+    this.startToastTimer(toast);
+  }
+
+  private startToastTimer(toast: ToastNotification): void {
+    const startTime = Date.now();
+    const duration = toast.remainingTime || 6000;
+
+    const updateProgress = () => {
+      if (toast.isPaused) return;
+
+      const elapsed = Date.now() - startTime;
+      const remaining = duration - elapsed;
+      toast.progress = Math.max(0, (remaining / 6000) * 100);
+
+      if (remaining <= 0) {
+        this.removeToast(toast.id);
+      }
+    };
+
+    const intervalId = setInterval(updateProgress, 50);
+
+    toast.timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+      this.removeToast(toast.id);
+    }, duration);
+
+    (toast as any).intervalId = intervalId;
+  }
+
+  pauseToast(toast: ToastNotification): void {
+    if (toast.isPaused) return;
+
+    toast.isPaused = true;
+    
+    if (toast.timeoutId) clearTimeout(toast.timeoutId);
+    if ((toast as any).intervalId) clearInterval((toast as any).intervalId);
+
+    const elapsed = Date.now() - (toast.startTime || Date.now());
+    toast.remainingTime = Math.max(0, (toast.remainingTime || 6000) - elapsed);
+  }
+
+  resumeToast(toast: ToastNotification): void {
+    if (!toast.isPaused) return;
+
+    toast.isPaused = false;
+    toast.startTime = Date.now();
+    this.startToastTimer(toast);
+  }
+
+  removeToast(id: string): void {
+    const activeToasts = this.activeToasts$.value;
+    const index = activeToasts.findIndex(t => t.id === id);
+    if (index === -1) return;
+
+    const toast = activeToasts[index];
+    
+    if (toast.timeoutId) clearTimeout(toast.timeoutId);
+    if ((toast as any).intervalId) clearInterval((toast as any).intervalId);
+
+    activeToasts.splice(index, 1);
+    this.activeToasts$.next([...activeToasts]);
+  }
+
+  openToast(toast: ToastNotification): void {
+    this.open(toast);
+    this.removeToast(toast.id);
   }
 
   // ============== CONVERSACIÓN ACTIVA ==============
@@ -182,10 +416,14 @@ export class NotificationService {
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
     if (!document.hidden) return; // Solo mostrar si pestaña está oculta
+    
+    // Verificar que sea reciente
+    const age = Date.now() - notification.createdAt.getTime();
+    if (age > RECENT_NOTIFICATION_WINDOW_MS) return;
 
     const options: NotificationOptions = {
       body: notification.body,
-      icon: '/img/logo.png',
+      icon: '/img/camello.png',
       tag: notification.conversationId, // Evita amontonamiento
       requireInteraction: false,
     };
@@ -272,8 +510,8 @@ export class NotificationService {
   // ============== CREAR NOTIFICACIÓN ==============
 
   /**
-   * Crea una notificación si el destinatario coincide con la audiencia actual.
-   * Aplica reglas de conversación activa, toasts, sonido, notificaciones del navegador.
+   * Crea una notificación. La detección de toasts/sonido se maneja en setupToastDetection.
+   * Este método solo aplica reglas de conversación activa.
    */
   createNotification(notification: Omit<AppNotification, 'id' | 'createdAt' | 'read'>): void {
     const recipient = this.getCurrentRecipient();
@@ -284,18 +522,9 @@ export class NotificationService {
 
     const isActive = this.isConversationActive(notification.conversationId);
 
-    // Si la conversación está activa y visible, aplicar reglas especiales
-    let shouldShowToast = this.prefs.toasts;
-    let shouldPlaySound = this.prefs.sound;
-
-    if (isActive) {
-      if (notification.type === 'message_new') {
-        // No crear notificación message_new si conversación activa
-        return;
-      }
-      // Notificaciones de cambio de estado se crean como leídas, sin toast ni sonido
-      shouldShowToast = false;
-      shouldPlaySound = false;
+    // Si la conversación está activa y es message_new, no crear notificación
+    if (isActive && notification.type === 'message_new') {
+      return;
     }
 
     // Crear la notificación en el store
@@ -303,11 +532,9 @@ export class NotificationService {
       ...notification,
     });
 
-    // Si conversación está activa, marcar inmediatamente como leída después de un microtask
+    // Si conversación está activa, marcar inmediatamente como leída
     if (isActive) {
-      // Usar setTimeout 0 para esperar a que el store procese el push
       setTimeout(() => {
-        // La última notificación es la que acabamos de crear
         this.store.notifications$.pipe(
           map(notifications => notifications.find(n => 
             n.conversationId === notification.conversationId &&
@@ -321,27 +548,6 @@ export class NotificationService {
           }
         }).unsubscribe();
       }, 0);
-    }
-
-    // Toast
-    if (shouldShowToast) {
-      // El toast se mostrará automáticamente por el componente notification-toasts
-    }
-
-    // Sonido
-    if (shouldPlaySound) {
-      this.playNotificationSound();
-    }
-
-    // Notificación del navegador
-    if (!isActive) {
-      const fullNotif: AppNotification = {
-        ...notification,
-        id: '', // No importa aquí
-        createdAt: new Date(),
-        read: false
-      };
-      this.showBrowserNotification(fullNotif);
     }
   }
 

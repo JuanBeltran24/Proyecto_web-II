@@ -2,6 +2,33 @@
   position: relative;
 }
 
+/* ============== VARIANT DARK (para sidebar del profesional) ============== */
+
+.variant-dark .notification-bell-button {
+  color: white;
+}
+
+.variant-dark .notification-bell-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.variant-dark .notification-bell-button:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.variant-dark .bell-icon {
+  color: white;
+}
+
+.variant-dark .notification-bell-button:hover .bell-icon {
+  color: white;
+}
+
+.variant-dark .badge {
+  background: #ef4444;
+  border-color: #0d5959;
+}
+
 /* ============== BOTÓN DE CAMPANA ============== */
 
 .notification-bell-button {
@@ -61,19 +88,15 @@
 /* ============== PANEL ============== */
 
 .notification-panel {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  width: 360px;
-  max-width: 90vw;
+  position: fixed;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  max-height: 600px;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
+  /* Las dimensiones se establecen dinámicamente desde JS */
 }
 
 /* ============== CABECERA ============== */
@@ -82,9 +105,15 @@
   padding: 1rem;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.header-row-1 {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
 }
 
 .panel-header h3 {
@@ -94,25 +123,74 @@
   color: #1a202c;
 }
 
-.header-actions {
+.header-row-2 {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.5rem;
 }
 
-.action-button {
-  background: none;
-  border: none;
-  color: #0d5959;
-  font-size: 0.875rem;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.action-button:hover {
-  background-color: #e6f7f7;
+.action-button {
+  background: white;
+  border: 1.5px solid #cbd5e0;
+  color: #4a5568;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  transition: background-color 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 500;
+  min-height: 36px;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+.action-button .button-icon {
+  flex-shrink: 0;
+}
+
+.action-button:hover:not(:disabled) {
+  background-color: #f7fafc;
+  border-color: #a0aec0;
+}
+
+.action-button:focus {
+  outline: 2px solid #0d5959;
+  outline-offset: 2px;
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clear-button {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.clear-button:hover {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.clear-button .button-icon {
+  color: #b91c1c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action-button {
+    transition: none;
+  }
 }
 
 .icon-button {
@@ -127,6 +205,11 @@
 
 .icon-button:hover {
   background-color: #f7fafc;
+}
+
+.icon-button:focus {
+  outline: 2px solid #0d5959;
+  outline-offset: 2px;
 }
 
 .back-button {
@@ -144,11 +227,97 @@
   background-color: #e6f7f7;
 }
 
+/* Confirmación de borrado */
+.clear-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.confirm-text {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a202c;
+  text-align: center;
+}
+
+.confirm-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.clear-cancel-button,
+.clear-confirm-button {
+  flex: 1;
+  min-height: 36px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1.5px solid;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.clear-cancel-button {
+  background: white;
+  border-color: #cbd5e0;
+  color: #4a5568;
+}
+
+.clear-cancel-button:hover {
+  background-color: #f7fafc;
+  border-color: #a0aec0;
+}
+
+.clear-cancel-button:focus {
+  outline: 2px solid #0d5959;
+  outline-offset: 2px;
+}
+
+.clear-confirm-button {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: white;
+}
+
+.clear-confirm-button:hover {
+  background-color: #991b1b;
+  border-color: #991b1b;
+}
+
+.clear-confirm-button:focus {
+  outline: 2px solid #b91c1c;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clear-cancel-button,
+  .clear-confirm-button {
+    transition: none;
+  }
+}
+
+/* Mensaje de resultado */
+.clear-result-message {
+  padding: 0.625rem;
+  background: #d1f0f0;
+  color: #0d5959;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
 /* ============== LISTA DE NOTIFICACIONES ============== */
 
 .notifications-list {
   overflow-y: auto;
-  max-height: 500px;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .notification-item {
@@ -160,6 +329,12 @@
   cursor: pointer;
   transition: background-color 0.2s;
   position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-item {
+    transition: none;
+  }
 }
 
 .notification-item:hover {
@@ -252,36 +427,13 @@
   font-size: 0.875rem;
 }
 
-/* ============== FOOTER ============== */
-
-.panel-footer {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.clear-all-button {
-  width: 100%;
-  padding: 0.5rem;
-  background: none;
-  border: 1px solid #e2e8f0;
-  color: #718096;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.clear-all-button:hover {
-  background-color: #f7fafc;
-  border-color: #cbd5e0;
-}
-
 /* ============== AJUSTES ============== */
 
 .settings-content {
   padding: 1rem;
   overflow-y: auto;
-  max-height: 500px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .setting-item {
@@ -316,30 +468,25 @@
   line-height: 1.4;
 }
 
-.permission-status {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.875rem;
-  color: #d69e2e;
-  line-height: 1.4;
-}
-
 /* ============== RESPONSIVE (MÓVIL) ============== */
 
-@media (max-width: 768px) {
-  .notification-panel {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: 100%;
-    border-radius: 16px 16px 0 0;
-    max-height: 80vh;
+@media (max-width: 640px) {
+  .action-button {
+    min-height: 44px;
   }
 
-  .notifications-list,
-  .settings-content {
-    max-height: calc(80vh - 60px);
+  .clear-cancel-button,
+  .clear-confirm-button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 400px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
   }
 }

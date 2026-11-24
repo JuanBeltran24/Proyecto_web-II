@@ -1,12 +1,19 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest, BehaviorSubject } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { ProfessionalSessionService } from '../professional-session.service';
 import { ChatStore, toProfessionalKey } from '../../components/professional-chat/chat-store.service';
 import { Conversation, ChatMessage, REQUEST_STATUS_CONFIG, RequestStatus } from '../../components/professional-chat/chat.models';
 import { NotificationService } from '../../notifications/notification.service';
+
+interface ViewModel {
+  conversations: Conversation[];
+  selected: Conversation | null;
+  freeChatMessages: ChatMessage[];
+}
 
 @Component({
   selector: 'app-professional-requests',
@@ -14,18 +21,19 @@ import { NotificationService } from '../../notifications/notification.service';
   templateUrl: './professional-requests.component.html',
   styleUrl: './professional-requests.component.css'
 })
-export class ProfessionalRequestsComponent implements OnInit, OnDestroy {
+export class ProfessionalRequestsComponent implements OnInit, OnDestroy, AfterViewInit {
   private sessionService = inject(ProfessionalSessionService);
   private chatStore = inject(ChatStore);
   private notificationService = inject(NotificationService);
   private route = inject(ActivatedRoute);
 
-  conversations$!: Observable<Conversation[]>;
-  selectedConversation: Conversation | null = null;
-  
-  // Mensajes de chat libres (excluye guided: true)
-  freeChatMessages: ChatMessage[] = [];
+  @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
 
+  private selectedIdSubject = new BehaviorSubject<string | null>(null);
+  private previousMessageCount = 0;
+
+  vm$!: Observable<ViewModel>;
+  
   // Para enviar mensajes
   newMessage = '';
 
@@ -33,22 +41,62 @@ export class ProfessionalRequestsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const session = this.sessionService.current;
-    if (session) {
-      const key = toProfessionalKey(session.name);
-      this.conversations$ = this.chatStore.conversationsForProfessional$(key);
-    }
+    if (!session) return;
+
+    const key = toProfessionalKey(session.name);
+    const conversations$ = this.chatStore.conversationsForProfessional$(key);
+
+    // Combinar conversaciones con el ID seleccionado para derivar el ViewModel
+    this.vm$ = combineLatest([
+      conversations$,
+      this.selectedIdSubject
+    ]).pipe(
+      map(([conversations, selectedId]) => {
+        const selected = selectedId 
+          ? conversations.find(c => c.id === selectedId) || null
+          : null;
+        
+        const freeChatMessages = selected 
+          ? selected.messages.filter(m => !m.guided && m.type === 'text')
+          : [];
+
+        return {
+          conversations,
+          selected,
+          freeChatMessages
+        };
+      }),
+      tap(vm => {
+        // Marcar como leídos cuando hay conversación seleccionada y tiene mensajes no leídos
+        if (vm.selected && vm.selected.unreadForPro > 0) {
+          Promise.resolve().then(() => {
+            this.chatStore.markRead(vm.selected!.id, 'professional');
+          });
+        }
+
+        // Scroll automático cuando cambia la cantidad de mensajes
+        if (vm.selected) {
+          const currentCount = vm.freeChatMessages.length;
+          if (currentCount !== this.previousMessageCount) {
+            this.previousMessageCount = currentCount;
+            Promise.resolve().then(() => this.scrollToBottomIfNearEnd());
+          }
+        }
+      })
+    );
 
     // Verificar si hay parámetro de conversación en la URL (desde notificación)
     this.route.queryParams.subscribe(params => {
       const conversationId = params['c'];
       if (conversationId) {
-        // Buscar la conversación y abrirla automáticamente
-        const conversation = this.chatStore.find(conversationId);
-        if (conversation) {
-          this.selectConversation(conversation);
-        }
+        this.selectConversationById(conversationId);
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    // Scroll inicial cuando se selecciona por primera vez
+    this.scrollToBottom();
   }
 
   ngOnDestroy(): void {
@@ -56,29 +104,27 @@ export class ProfessionalRequestsComponent implements OnInit, OnDestroy {
     this.notificationService.setActiveConversation(null);
   }
 
+  selectConversationById(id: string) {
+    this.selectedIdSubject.next(id);
+    this.notificationService.setActiveConversation(id);
+    this.previousMessageCount = 0; // Reset para forzar scroll en la primera carga
+  }
+
   selectConversation(conv: Conversation) {
-    this.selectedConversation = conv;
-    
-    // Establecer como conversación activa en el servicio de notificaciones
-    this.notificationService.setActiveConversation(conv.id);
-    
-    // Filtrar solo mensajes de chat libre (excluye guided)
-    this.freeChatMessages = conv.messages.filter(m => !m.guided);
-    
-    // Marcar como leídos
-    this.chatStore.markRead(conv.id, 'professional');
+    this.selectConversationById(conv.id);
   }
 
   backToList() {
-    this.selectedConversation = null;
-    // Limpiar conversación activa al volver a la lista
+    this.selectedIdSubject.next(null);
     this.notificationService.setActiveConversation(null);
+    this.previousMessageCount = 0;
   }
 
   sendMessage() {
-    if (!this.selectedConversation || !this.newMessage.trim()) return;
+    const selectedId = this.selectedIdSubject.value;
+    if (!selectedId || !this.newMessage.trim()) return;
 
-    this.chatStore.addMessage(this.selectedConversation.id, {
+    this.chatStore.addMessage(selectedId, {
       sender: 'professional',
       type: 'text',
       text: this.newMessage.trim(),
@@ -86,92 +132,101 @@ export class ProfessionalRequestsComponent implements OnInit, OnDestroy {
     });
 
     this.newMessage = '';
-    
-    // Actualizar la vista de mensajes
-    const updated = this.chatStore.find(this.selectedConversation.id);
-    if (updated) {
-      this.freeChatMessages = updated.messages.filter(m => !m.guided);
-    }
   }
 
   acceptRequest() {
-    if (!this.selectedConversation?.request) return;
+    const selectedId = this.selectedIdSubject.value;
+    if (!selectedId) return;
 
-    this.chatStore.updateRequest(this.selectedConversation.id, {
+    this.chatStore.updateRequest(selectedId, {
       status: 'accepted'
     });
 
     // Enviar mensaje automático
-    this.chatStore.addMessage(this.selectedConversation.id, {
+    this.chatStore.addMessage(selectedId, {
       sender: 'professional',
       type: 'text',
       text: '¡Solicitud aceptada! Estaré allí en la fecha y hora acordadas.',
       guided: false
     });
-
-    // Actualizar vista
-    this.refreshSelectedConversation();
   }
 
   rejectRequest() {
-    if (!this.selectedConversation?.request) return;
+    const selectedId = this.selectedIdSubject.value;
+    if (!selectedId) return;
 
-    this.chatStore.updateRequest(this.selectedConversation.id, {
+    this.chatStore.updateRequest(selectedId, {
       status: 'rejected'
     });
 
-    this.chatStore.addMessage(this.selectedConversation.id, {
+    this.chatStore.addMessage(selectedId, {
       sender: 'professional',
       type: 'text',
       text: 'Lo siento, no puedo atender esta solicitud en este momento.',
       guided: false
     });
-
-    this.refreshSelectedConversation();
   }
 
   proposeTime() {
-    if (!this.selectedConversation?.request) return;
+    const selectedId = this.selectedIdSubject.value;
+    if (!selectedId) return;
 
-    this.chatStore.updateRequest(this.selectedConversation.id, {
+    this.chatStore.updateRequest(selectedId, {
       status: 'rescheduled'
     });
 
-    this.chatStore.addMessage(this.selectedConversation.id, {
+    this.chatStore.addMessage(selectedId, {
       sender: 'professional',
       type: 'text',
       text: 'Te propongo otra fecha/hora. ¿Te funciona?',
       guided: false
     });
-
-    this.refreshSelectedConversation();
   }
 
   finishRequest() {
-    if (!this.selectedConversation?.request) return;
+    const selectedId = this.selectedIdSubject.value;
+    if (!selectedId) return;
 
-    this.chatStore.updateRequest(this.selectedConversation.id, {
+    this.chatStore.updateRequest(selectedId, {
       status: 'finished'
     });
 
-    this.chatStore.addMessage(this.selectedConversation.id, {
+    this.chatStore.addMessage(selectedId, {
       sender: 'professional',
       type: 'text',
       text: '¡Servicio finalizado! Gracias por confiar en mí.',
       guided: false
     });
-
-    this.refreshSelectedConversation();
   }
 
-  private refreshSelectedConversation() {
-    if (!this.selectedConversation) return;
+  private scrollToBottomIfNearEnd(): void {
+    if (!this.messagesContainer) return;
     
-    const updated = this.chatStore.find(this.selectedConversation.id);
-    if (updated) {
-      this.selectedConversation = updated;
-      this.freeChatMessages = updated.messages.filter(m => !m.guided);
+    const container = this.messagesContainer.nativeElement;
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+    
+    // Solo hacer scroll si el usuario estaba cerca del final (menos de 80px del final)
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    if (distanceFromBottom < 80) {
+      this.scrollToBottom();
     }
+  }
+
+  private scrollToBottom(): void {
+    if (!this.messagesContainer) return;
+    
+    Promise.resolve().then(() => {
+      const container = this.messagesContainer?.nativeElement;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    });
+  }
+
+  trackByMessageId(index: number, message: ChatMessage): string {
+    return message.id;
   }
 
   getStatusConfig(status: RequestStatus) {

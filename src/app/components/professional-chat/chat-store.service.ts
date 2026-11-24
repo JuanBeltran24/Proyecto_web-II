@@ -50,6 +50,7 @@ export class ChatStore {
 
   /**
    * Obtiene o crea el cliente invitado persistido
+   * Si existe un perfil con nombre real, usa ese nombre
    */
   getClient(): Client {
     if (typeof localStorage === 'undefined') {
@@ -63,7 +64,25 @@ export class ChatStore {
     try {
       const stored = localStorage.getItem(CLIENT_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const client = JSON.parse(stored);
+        
+        // Intentar leer el nombre del perfil
+        try {
+          const profileStored = localStorage.getItem('ahc_client_profile_v1');
+          if (profileStored) {
+            const profileData = JSON.parse(profileStored);
+            if (profileData.profile && 
+                profileData.profile.clientId === client.id && 
+                profileData.profile.name && 
+                profileData.profile.name.trim().length > 0) {
+              client.name = profileData.profile.name;
+            }
+          }
+        } catch (e) {
+          // Ignorar error al leer perfil
+        }
+        
+        return client;
       }
     } catch (e) {
       console.warn('Error leyendo cliente:', e);
@@ -108,6 +127,37 @@ export class ChatStore {
           .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
       )
     );
+  }
+
+  /**
+   * Observable de conversaciones filtradas para un cliente
+   * Solo muestra conversaciones con request y status distinto de 'draft'
+   * Ordenadas por updatedAt desc
+   */
+  conversationsForClient$(clientId: string): Observable<Conversation[]> {
+    return this.conversations$.pipe(
+      map(conversations => 
+        conversations
+          .filter(c => 
+            c.clientId === clientId && 
+            c.request && 
+            c.request.status !== 'draft'
+          )
+          .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      )
+    );
+  }
+
+  /**
+   * Actualiza el nombre del cliente en todas sus conversaciones
+   * No toca contadores de no leídos ni updatedAt
+   */
+  updateClientName(clientId: string, name: string): void {
+    this.mutate(data => {
+      data.conversations
+        .filter(c => c.clientId === clientId)
+        .forEach(c => c.clientName = name);
+    });
   }
 
   /**
@@ -308,44 +358,54 @@ export class ChatStore {
       });
 
       // NOTIFICACIONES: cambio de estado al usuario
-      if (newStatus && newStatus !== oldStatus && newStatus !== 'draft') {
-        let notifType: 'request_accepted' | 'request_rejected' | 'request_rescheduled' | 'request_finished';
-        let title: string;
-        let body: string;
+      if (newStatus && newStatus !== oldStatus && newStatus !== 'draft' && patch.status) {
+        // Verificar que no se haya creado una notificación similar recientemente
+        const recentNotifications = this.getRecentNotificationsForConversation(convId);
+        const alreadyCreated = recentNotifications.some(n =>
+          n.type === `request_${newStatus}` &&
+          n.conversationId === convId &&
+          (Date.now() - n.createdAt.getTime()) < 3000
+        );
 
-        switch (newStatus) {
-          case 'accepted':
-            notifType = 'request_accepted';
-            title = 'Solicitud aceptada';
-            body = `${conv.professionalName} aceptó tu solicitud de servicio`;
-            break;
-          case 'rejected':
-            notifType = 'request_rejected';
-            title = 'Solicitud rechazada';
-            body = `${conv.professionalName} no puede atender tu solicitud en este momento`;
-            break;
-          case 'rescheduled':
-            notifType = 'request_rescheduled';
-            title = 'Solicitud reprogramada';
-            body = `${conv.professionalName} propuso una nueva fecha para tu solicitud`;
-            break;
-          case 'finished':
-            notifType = 'request_finished';
-            title = 'Servicio finalizado';
-            body = `${conv.professionalName} marcó el servicio como completado`;
-            break;
-          default:
-            return; // No generar notificación para otros estados
+        if (!alreadyCreated) {
+          let notifType: 'request_accepted' | 'request_rejected' | 'request_rescheduled' | 'request_finished';
+          let title: string;
+          let body: string;
+
+          switch (newStatus) {
+            case 'accepted':
+              notifType = 'request_accepted';
+              title = 'Solicitud aceptada';
+              body = `${conv.professionalName} aceptó tu solicitud de servicio`;
+              break;
+            case 'rejected':
+              notifType = 'request_rejected';
+              title = 'Solicitud rechazada';
+              body = `${conv.professionalName} no puede atender tu solicitud en este momento`;
+              break;
+            case 'rescheduled':
+              notifType = 'request_rescheduled';
+              title = 'Solicitud reprogramada';
+              body = `${conv.professionalName} propuso una nueva fecha para tu solicitud`;
+              break;
+            case 'finished':
+              notifType = 'request_finished';
+              title = 'Servicio finalizado';
+              body = `${conv.professionalName} marcó el servicio como completado`;
+              break;
+            default:
+              return; // No generar notificación para otros estados
+          }
+
+          this.notificationStore.push({
+            type: notifType,
+            title,
+            body,
+            conversationId: convId,
+            recipientType: 'user',
+            recipientId: conv.clientId,
+          });
         }
-
-        this.notificationStore.push({
-          type: notifType,
-          title,
-          body,
-          conversationId: convId,
-          recipientType: 'user',
-          recipientId: conv.clientId,
-        });
       }
     });
   }
@@ -367,6 +427,21 @@ export class ChatStore {
   }
 
   // ========== Métodos Privados ==========
+
+  private getRecentNotificationsForConversation(convId: string): any[] {
+    if (typeof localStorage === 'undefined') return [];
+    
+    try {
+      const stored = localStorage.getItem('ahc_notifications_v1');
+      if (stored) {
+        const data = JSON.parse(stored, this.reviver);
+        return (data.notifications || []).filter((n: any) => n.conversationId === convId);
+      }
+    } catch (e) {
+      console.warn('Error leyendo notificaciones:', e);
+    }
+    return [];
+  }
 
   private load(): void {
     if (typeof localStorage === 'undefined') return;

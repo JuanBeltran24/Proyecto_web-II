@@ -32,6 +32,7 @@ export interface ChatMessage {
 
 export type ChatStep = 
   | 'greeting'
+  | 'name'
   | 'service'
   | 'problem'
   | 'day'

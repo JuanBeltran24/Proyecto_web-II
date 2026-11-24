@@ -93,6 +93,12 @@
 
 @media (max-width: 968px) {
   .header .header-actions {
+    gap: 8px;
+  }
+  
+  /* En móvil, mostrar solo avatar, campana y hamburguesa */
+  .header .header-actions .btn-cuenta,
+  .header .header-actions .btn {
     display: none;
   }
 }

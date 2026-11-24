@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, combineLatest, Subject } from 'rxjs';
+import { map, takeUntil, distinctUntilChanged } from 'rxjs/operators';
 import { 
   ChatMessage, 
   ChatStep, 
@@ -13,12 +13,14 @@ import { Professional } from '../professional-card/professional-card.component';
 import { ChatStore } from './chat-store.service';
 import { toIsoDate, formatLongDate, formatTime12 } from './chat-utils';
 import { getServicesBySpecialty } from './professional-services';
+import { ClientProfileService } from '../../client-profile/client-profile.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
   private store = inject(ChatStore);
+  private clientProfile = inject(ClientProfileService);
 
   private activeConversationIdSubject = new BehaviorSubject<string | null>(null);
   private typingSubject = new BehaviorSubject<boolean>(false);
@@ -34,6 +36,7 @@ export class ChatService {
   private currentDraft: Partial<ServiceRequest> = {};
   private typingTimer?: ReturnType<typeof setTimeout>;
   private currentConversationId: string | null = null;
+  private destroy$ = new Subject<void>();
 
   // Mensajes de la conversación activa
   get messages$(): Observable<ChatMessage[]> {
@@ -75,6 +78,9 @@ export class ChatService {
       return;
     }
 
+    // Cancelar observadores anteriores
+    this.destroy$.next();
+
     this.currentConversationId = conv.id;
     this.currentProfessional = professional;
     this.activeConversationIdSubject.next(conv.id);
@@ -82,7 +88,24 @@ export class ChatService {
     // Marcar como leído para el usuario
     this.store.markRead(conv.id, 'user');
 
-    // Si ya tiene request enviada, restaurar modo chat libre
+    // Observar cambios en el estado de la solicitud para actualizar la UI
+    this.watchRequestStatus(conv.id);
+
+    // Si la solicitud anterior fue finalizada, permitir nueva solicitud
+    if (conv.request && conv.request.status === 'finished') {
+      this.updateUiState({
+        step: 'sent',
+        inputMode: 'chips',
+        options: [
+          { label: '✓ Nueva solicitud', value: '__new_request__' }
+        ],
+        placeholder: `Escribe un mensaje a ${professional.name}...`,
+        isTyping: false
+      });
+      return;
+    }
+
+    // Si ya tiene request enviada (pero no finalizada), restaurar modo chat libre
     if (conv.request && conv.request.status !== 'draft') {
       this.updateUiState({
         step: 'sent',
@@ -115,10 +138,60 @@ export class ChatService {
       true
     );
 
-    // Avanzar al siguiente paso
-    setTimeout(() => {
-      this.moveToStep('service', services);
-    }, 800);
+    // Si no tiene nombre, preguntar primero
+    if (!this.clientProfile.hasName) {
+      setTimeout(() => {
+        const firstName = professional.name.split(' ')[0];
+        this.moveToStep('name', [firstName]);
+      }, 800);
+    } else {
+      // Avanzar al siguiente paso
+      setTimeout(() => {
+        this.moveToStep('service', services);
+      }, 800);
+    }
+  }
+
+  /**
+   * Observa cambios en el estado de la solicitud para actualizar la UI automáticamente
+   */
+  private watchRequestStatus(conversationId: string): void {
+    this.store.conversations$.pipe(
+      map(conversations => conversations.find(c => c.id === conversationId)),
+      map(conv => conv?.request?.status),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(status => {
+      // Si el estado cambia a 'accepted', 'rejected', 'rescheduled' o 'finished'
+      // y el chat ya está en modo 'sent', asegurarse de que el input esté habilitado
+      if (!status) return;
+      
+      const currentState = this.uiStateSubject.value;
+      
+      // Si la solicitud fue aceptada, rechazada o reprogramada, habilitar chat libre
+      if (['accepted', 'rejected', 'rescheduled'].includes(status) && currentState.step === 'sent') {
+        this.updateUiState({
+          step: 'sent',
+          inputMode: 'text',
+          options: [],
+          placeholder: `Escribe un mensaje a ${this.currentProfessional?.name}...`,
+          isTyping: false
+        });
+      }
+      
+      // Si la solicitud fue finalizada, mostrar botón de nueva solicitud
+      if (status === 'finished') {
+        this.updateUiState({
+          step: 'sent',
+          inputMode: 'chips',
+          options: [
+            { label: '✓ Nueva solicitud', value: '__new_request__' }
+          ],
+          placeholder: `Escribe un mensaje a ${this.currentProfessional?.name}...`,
+          isTyping: false
+        });
+      }
+    });
   }
 
   /**
@@ -131,6 +204,10 @@ export class ChatService {
     }
     if (option.value === '__select_time__') {
       this.updateUiState({ inputMode: 'time' });
+      return;
+    }
+    if (option.value === '__new_request__') {
+      this.startNewRequest();
       return;
     }
 
@@ -146,6 +223,12 @@ export class ChatService {
       } catch {
         // No es JSON, procesar normalmente
       }
+    }
+
+    // Para direcciones guardadas, usar el value completo
+    if (state.step === 'address') {
+      this.handleUserResponse(option.value, option.label, true);
+      return;
     }
 
     this.handleUserResponse(option.value, option.label, true);
@@ -195,6 +278,7 @@ export class ChatService {
    */
   reset(): void {
     this.clearTimers();
+    this.destroy$.next(); // Cancelar observadores
     this.currentConversationId = null;
     this.currentProfessional = null;
     this.currentDraft = {};
@@ -206,6 +290,40 @@ export class ChatService {
       placeholder: '',
       isTyping: false
     });
+  }
+
+  /**
+   * Inicia una nueva solicitud después de que la anterior fue finalizada
+   * Limpia la solicitud anterior y reinicia el flujo de chat
+   */
+  private startNewRequest(): void {
+    if (!this.currentConversationId || !this.currentProfessional) return;
+
+    // Limpiar la solicitud finalizada de la conversación
+    this.store.clearMessages(this.currentConversationId);
+
+    // Reiniciar el flujo
+    this.currentDraft = {};
+    const services = this.getServices();
+
+    this.updateUiState({
+      step: 'greeting',
+      inputMode: 'hidden',
+      options: [],
+      placeholder: '',
+      isTyping: false
+    });
+
+    // Mensaje de saludo del bot
+    this.addBotMessage(
+      `¡Bienvenido de nuevo! Hagamos una nueva solicitud.`,
+      true
+    );
+
+    // Avanzar al siguiente paso
+    setTimeout(() => {
+      this.moveToStep('service', services);
+    }, 800);
   }
 
   // ========== Métodos Privados ==========
@@ -225,6 +343,17 @@ export class ChatService {
 
   private processStep(step: ChatStep, value: string): void {
     switch (step) {
+      case 'name':
+        // Validar nombre (2 a 60 caracteres)
+        if (value.trim().length < 2 || value.trim().length > 60) {
+          this.addBotMessage('Por favor, escribe un nombre válido (entre 2 y 60 caracteres).', true);
+          this.updateUiState({ inputMode: 'text', placeholder: 'Tu nombre...' });
+          return;
+        }
+        // Guardar nombre en el perfil
+        this.clientProfile.updateProfile({ name: value.trim() });
+        this.showTypingAndMove('service');
+        break;
       case 'service':
         this.currentDraft.service = value;
         this.showTypingAndMove('problem');
@@ -253,17 +382,27 @@ export class ChatService {
         }
         break;
       case 'sent':
-        // Chat libre: el mensaje ya se agregó, no hacer nada más
+        // Chat libre: el mensaje ya se agregó, volver a habilitar el input
+        this.updateUiState({
+          step: 'sent',
+          inputMode: 'text',
+          options: [],
+          placeholder: `Escribe un mensaje a ${this.currentProfessional?.name}...`,
+          isTyping: false
+        });
         // BACKEND: Aquí se enviará el mensaje por WebSocket
         break;
     }
   }
 
-  private moveToStep(step: ChatStep, services?: string[]): void {
+  private moveToStep(step: ChatStep, services?: string[], firstName?: string): void {
     const state = this.uiStateSubject.value;
     state.step = step;
 
     switch (step) {
+      case 'name':
+        this.askName(firstName || '');
+        break;
       case 'service':
         this.askService(services!);
         break;
@@ -292,8 +431,23 @@ export class ChatService {
     this.setTyping(true);
     this.typingTimer = setTimeout(() => {
       this.setTyping(false);
-      this.moveToStep(nextStep);
+      if (nextStep === 'service') {
+        const services = this.getServices();
+        this.moveToStep(nextStep, services);
+      } else {
+        this.moveToStep(nextStep);
+      }
     }, delay);
+  }
+
+  private askName(firstName: string): void {
+    this.addBotMessage(`¿Cómo te llamas? Así te presento con ${firstName}.`, true);
+    
+    this.updateUiState({
+      inputMode: 'text',
+      options: [],
+      placeholder: 'Tu nombre...'
+    });
   }
 
   private askService(services: string[]): void {
@@ -363,11 +517,28 @@ export class ChatService {
   private askAddress(): void {
     this.addBotMessage('¿Dónde se realizará el servicio?', true);
     
-    this.updateUiState({
-      inputMode: 'text',
-      options: [],
-      placeholder: 'Barrio, calle y número...'
-    });
+    const profile = this.clientProfile.snapshot;
+    const savedAddress = profile?.address || '';
+    
+    if (savedAddress.trim().length > 0) {
+      // Mostrar la dirección guardada como opción
+      const options: QuickOption[] = [{
+        label: `📍 ${savedAddress.substring(0, 50)}${savedAddress.length > 50 ? '...' : ''}`,
+        value: savedAddress
+      }];
+      
+      this.updateUiState({
+        inputMode: 'chips',
+        options,
+        placeholder: 'O escribe otra dirección...'
+      });
+    } else {
+      this.updateUiState({
+        inputMode: 'text',
+        options: [],
+        placeholder: 'Barrio, calle y número...'
+      });
+    }
   }
 
   private showConfirmation(): void {
@@ -424,9 +595,10 @@ export class ChatService {
       true
     );
 
-    // BACKEND: Aquí se enviaría la solicitud al servidor
+    // Habilitar chat libre inmediatamente
+    this.enableFreeChat();
 
-    this.showTypingAndMove('sent', 800);
+    // BACKEND: Aquí se enviaría la solicitud al servidor
   }
 
   private editRequest(): void {

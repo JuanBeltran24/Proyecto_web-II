@@ -4,9 +4,13 @@
 :root {
   --color-primary: #0d5959;
   --color-primary-dark: #0a4848;
+  --color-primary-mid: #137a7a;
+  --color-primary-light: #d9ecec;
+  --color-primary-soft: #f1f8f8;
   --color-accent: #f39c12;
   --color-text: #2c3e50;
   --color-text-light: #666666;
+  --color-text-muted: #5b6770;
   --color-border: #e0e0e0;
   --color-success: #4caf50;
   --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.18);

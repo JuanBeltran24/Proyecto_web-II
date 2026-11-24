@@ -1,0 +1,334 @@
+<div class="profile-page" *ngIf="profile$ | async as profile">
+  <!-- Header -->
+  <div class="profile-header">
+    <div class="profile-header-content">
+      <div class="profile-avatar-section">
+        <app-client-avatar [photo]="profile.photo" [name]="profile.name || 'Invitado'" size="large"></app-client-avatar>
+        <div class="profile-photo-actions">
+          <button type="button" class="btn-photo-action" (click)="triggerPhotoUpload()" [disabled]="isUploadingPhoto">
+            {{ isUploadingPhoto ? 'Subiendo...' : (profile.photo ? 'Cambiar foto' : 'Subir foto') }}
+          </button>
+          <button *ngIf="profile.photo" type="button" class="btn-photo-action-secondary" (click)="removePhoto()">
+            Quitar foto
+          </button>
+          <input
+            #photoInput
+            type="file"
+            accept="image/*"
+            class="photo-input-hidden"
+            (change)="onPhotoSelected($event)">
+          <p *ngIf="photoError" class="photo-error">{{ photoError }}</p>
+        </div>
+      </div>
+      
+      <div class="profile-info">
+        <h1 class="profile-name">{{ profileService.hasName ? profile.name : 'Invitado' }}</h1>
+        <p class="profile-meta">Cliente desde {{ getCreatedDate() }}</p>
+        
+        <div class="profile-stats" *ngIf="conversationStats$ | async as stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.total }}</span>
+            <span class="stat-label">Solicitudes</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.inProgress }}</span>
+            <span class="stat-label">En curso</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.finished }}</span>
+            <span class="stat-label">Finalizadas</span>
+          </div>
+        </div>
+        
+        <div *ngIf="isProfileIncomplete" class="profile-notice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>Completa tu perfil para pedir servicios más rápido</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Tabs -->
+  <div class="tabs-container">
+    <div class="tabs" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="activeTab === 'datos'"
+        [attr.aria-selected]="activeTab === 'datos'"
+        (click)="changeTab('datos')">
+        Mis datos
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="activeTab === 'solicitudes'"
+        [attr.aria-selected]="activeTab === 'solicitudes'"
+        (click)="changeTab('solicitudes')">
+        Mis solicitudes
+      </button>
+    </div>
+  </div>
+  
+  <!-- Content -->
+  <div class="profile-content">
+    
+    <!-- PESTAÑA: Mis datos -->
+    <div *ngIf="activeTab === 'datos'" class="tab-panel" role="tabpanel">
+      <h2 class="section-title">Información personal</h2>
+      
+      <form class="profile-form" (ngSubmit)="saveProfile()">
+        <div class="form-group">
+          <label for="name" class="form-label">Nombre completo</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="form-input"
+            [(ngModel)]="formData.name"
+            autocomplete="name"
+            [disabled]="!isEditingProfile"
+            [attr.aria-invalid]="formErrors.name ? 'true' : null"
+            [attr.aria-describedby]="formErrors.name ? 'name-error' : null">
+          <p *ngIf="formErrors.name" id="name-error" class="form-error">{{ formErrors.name }}</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="phone" class="form-label">Teléfono</label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            class="form-input"
+            [(ngModel)]="formData.phone"
+            autocomplete="tel"
+            inputmode="tel"
+            [disabled]="!isEditingProfile"
+            [attr.aria-invalid]="formErrors.phone ? 'true' : null"
+            [attr.aria-describedby]="formErrors.phone ? 'phone-error' : null">
+          <p *ngIf="formErrors.phone" id="phone-error" class="form-error">{{ formErrors.phone }}</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="email" class="form-label">Correo electrónico (opcional)</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-input"
+            [(ngModel)]="formData.email"
+            autocomplete="email"
+            [disabled]="!isEditingProfile"
+            [attr.aria-invalid]="formErrors.email ? 'true' : null"
+            [attr.aria-describedby]="formErrors.email ? 'email-error' : null">
+          <p *ngIf="formErrors.email" id="email-error" class="form-error">{{ formErrors.email }}</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="address" class="form-label">Dirección (opcional)</label>
+          <input
+            type="text"
+            id="address"
+            name="address"
+            class="form-input"
+            [(ngModel)]="formData.address"
+            autocomplete="street-address"
+            placeholder="Ej: Calle 123 #45-67, Barrio Centro"
+            [disabled]="!isEditingProfile"
+            [attr.aria-invalid]="formErrors.address ? 'true' : null"
+            [attr.aria-describedby]="formErrors.address ? 'address-error' : null">
+          <p *ngIf="formErrors.address" id="address-error" class="form-error">{{ formErrors.address }}</p>
+        </div>
+        
+        <div class="form-actions">
+          <!-- Botón Editar/Guardar -->
+          <button
+            *ngIf="!isEditingProfile"
+            type="button"
+            class="btn btn-primary"
+            (click)="startEditingProfile()">
+            ✏️ Editar información
+          </button>
+          
+          <!-- Botones cuando está en edición -->
+          <div *ngIf="isEditingProfile" class="editing-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="!hasChanges || isSaving">
+              {{ isSaving ? 'Guardando...' : '✓ Guardar cambios' }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="cancelEditingProfile()">
+              ✕ Cancelar
+            </button>
+          </div>
+        </div>
+        
+        <span *ngIf="showSaved" class="save-success">✓ Guardado</span>
+      </form>
+      
+      <p class="form-note">
+        Tus datos se guardan en este dispositivo.
+      </p>
+    </div>
+    
+    <!-- PESTAÑA: Mis solicitudes -->
+    <div *ngIf="activeTab === 'solicitudes'" class="tab-panel" role="tabpanel">
+      <h2 class="section-title">Historial de solicitudes</h2>
+      
+      <!-- Filtros -->
+      <div class="filters">
+        <button
+          type="button"
+          class="filter-chip"
+          [class.active]="filterStatus === 'all'"
+          (click)="setFilter('all')">
+          Todas ({{ getFilterCount('all') }})
+        </button>
+        <button
+          type="button"
+          class="filter-chip"
+          [class.active]="filterStatus === 'pending'"
+          (click)="setFilter('pending')">
+          En curso ({{ getFilterCount('pending') }})
+        </button>
+        <button
+          type="button"
+          class="filter-chip"
+          [class.active]="filterStatus === 'finished'"
+          (click)="setFilter('finished')">
+          Finalizadas ({{ getFilterCount('finished') }})
+        </button>
+        <button
+          type="button"
+          class="filter-chip"
+          [class.active]="filterStatus === 'rejected'"
+          (click)="setFilter('rejected')">
+          Rechazadas ({{ getFilterCount('rejected') }})
+        </button>
+      </div>
+      
+      <!-- Lista de solicitudes -->
+      <div *ngIf="filteredConversations$ | async as conversations">
+        <div *ngIf="conversations.length === 0" class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+          <p>Aún no has pedido servicios</p>
+          <a href="/" class="btn btn-primary">Buscar profesionales</a>
+        </div>
+        
+        <div class="requests-list">
+          <div
+            *ngFor="let conv of conversations; trackBy: trackByConversationId"
+            class="request-card">
+            <div class="request-card-header">
+              <div class="request-professional">
+                <strong>{{ conv.professionalName }}</strong>
+                <span class="request-specialty">{{ conv.professionalSpecialty }}</span>
+              </div>
+              <span
+                class="status-pill"
+                [style.color]="statusConfig[conv.request!.status].color"
+                [style.background-color]="statusConfig[conv.request!.status].bgColor">
+                {{ statusConfig[conv.request!.status].label }}
+              </span>
+            </div>
+            
+            <div class="request-details">
+              <p><strong>Servicio:</strong> {{ conv.request!.service }}</p>
+              <p><strong>Fecha:</strong> {{ conv.request!.day }} · {{ conv.request!.time }}</p>
+              <p><strong>Dirección:</strong> {{ conv.request!.address }}</p>
+            </div>
+            
+            <p class="request-updated">
+              Actualizado: {{ conv.updatedAt | date: 'short' }}
+            </p>
+            
+            <!-- Botones de acción -->
+            <div class="request-actions">
+              <button type="button" class="btn btn-secondary" (click)="openChat(conv.id)">
+                Abrir chat
+              </button>
+              
+              <!-- Calificar (solo para finalizadas sin reseña) -->
+              <button
+                *ngIf="conv.request!.status === 'finished' && !hasReview(conv.id)"
+                type="button"
+                class="btn btn-primary"
+                (click)="startRating(conv.id)">
+                Calificar
+              </button>
+              
+              <!-- Mostrar calificación si ya existe -->
+              <div *ngIf="hasReview(conv.id)" class="rating-display">
+                <span>Tu calificación:</span>
+                <div class="stars">
+                  <span *ngFor="let i of [1,2,3,4,5]" class="star" [class.filled]="i <= getReview(conv.id).rating">
+                    ★
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Diálogo de calificación -->
+            <div *ngIf="ratingConversationId === conv.id" class="rating-dialog">
+              <h3>Calificar servicio</h3>
+              <p>¿Cómo fue tu experiencia con {{ conv.professionalName }}?</p>
+              
+              <div class="rating-stars">
+                <button
+                  *ngFor="let i of [1,2,3,4,5]"
+                  type="button"
+                  class="star-button"
+                  [class.filled]="i <= (ratingHover || ratingValue)"
+                  (click)="setRating(i)"
+                  (mouseenter)="setRatingHover(i)"
+                  (mouseleave)="setRatingHover(0)"
+                  [attr.aria-label]="i + ' estrellas'">
+                  ★
+                </button>
+              </div>
+              
+              <div class="form-group">
+                <label for="rating-comment" class="form-label">Comentario (opcional)</label>
+                <textarea
+                  id="rating-comment"
+                  name="comment"
+                  class="form-textarea"
+                  [(ngModel)]="ratingComment"
+                  maxlength="300"
+                  rows="3"
+                  placeholder="Comparte tu experiencia..."></textarea>
+                <span class="char-count">{{ ratingComment.length }}/300</span>
+              </div>
+              
+              <div class="form-actions">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="ratingValue === 0"
+                  (click)="submitRating()">
+                  Enviar calificación
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="cancelRating()">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>

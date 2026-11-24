@@ -3,12 +3,14 @@ import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/auth/login/login.component';
 import { RegisterComponent } from './pages/auth/register/register.component';
 import { RegisterProfessionalComponent } from './pages/auth/register-professional/register-professional.component';
+import { ClientProfilePageComponent } from './client-profile/client-profile-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'register-professional', component: RegisterProfessionalComponent },
+  { path: 'perfil', component: ClientProfilePageComponent },
   { 
     path: 'profesional', 
     loadChildren: () => import('./professional-panel/professional.routes').then(m => m.PROFESSIONAL_ROUTES)
